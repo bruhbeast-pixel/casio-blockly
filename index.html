@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RSC Blockly Editor</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Google Blockly -->
+  <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Fix 1: Ensure Blockly's flyout scrollbar hides cleanly when flyout is closed and never blocks trashcan */
+    .blocklyFlyout[style*="display: none"] + .blocklyFlyoutScrollbar,
+    .blocklyFlyout[aria-hidden="true"] + .blocklyFlyoutScrollbar {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    /* Ensure trashcan and zoom controls remain clickable above workspace layers */
+    .blocklyTrash {
+      cursor: pointer;
+    }
+
+    /* Clean minimalist toolbox styling */
+    .blocklyToolboxDiv {
+      background-color: #171717 !important;
+      border-right: 1px solid #262626;
+      padding-top: 8px;
+    }
+
+    .blocklyTreeRow {
+      height: 28px !important;
+      line-height: 28px !important;
+      margin: 1px 4px !important;
+      border-radius: 4px !important;
+      padding-right: 8px !important;
+    }
+
+    .blocklyTreeLabel {
+      font-family: 'Inter', sans-serif !important;
+      font-size: 12px !important;
+      font-weight: 400 !important;
+      color: #e5e5e5 !important;
+    }
+
+    .blocklyTreeSelected .blocklyTreeLabel {
+      color: #ffffff !important;
+    }
+ 
+    #bm-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); align-items:center; justify-content:center; z-index:999; padding:16px; }
+    #bm-box { background:#1e1e1e; color:#eee; padding:12px; border:1px solid #555; display:flex; flex-direction:column; gap:8px; max-width:90vw; max-height:90vh; }
+    #bm-bar { display:flex; gap:6px; align-items:center; flex-wrap:wrap; font-family:monospace; }
+    #bm-bar input { width:46px; background:#111; color:#eee; border:1px solid #555; padding:2px 4px; font:inherit; }
+    #bm-bar button { background:#333; color:#eee; border:1px solid #666; padding:2px 8px; font:inherit; cursor:pointer; }
+    #bm-wrap { overflow:auto; max-height:65vh; border:1px solid #444; background:#fff; align-self:center; }
+    #bm-cv { display:block; cursor:crosshair; image-rendering:pixelated; }
+
+  </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 font-sans h-screen flex flex-col lg:flex-row overflow-hidden antialiased selection:bg-orange-500/30">
+
+  <!-- Left / Top: Blockly Workspace -->
+  <main class="flex-1 relative min-h-[58%] lg:min-h-0 bg-neutral-100 overflow-hidden">
+    <div id="blocklyDiv" class="absolute inset-0 w-full h-full"></div>
+  </main>
+
+  <!-- Right / Bottom: Minimal RSC Output Panel -->
+  <aside class="w-full lg:w-[380px] xl:w-[440px] h-[42%] lg:h-full bg-neutral-950 border-t lg:border-t-0 lg:border-l border-neutral-800 flex flex-col shrink-0">
+    
+    <!-- Minimal Controls Strip -->
+    <div class="px-3 py-2 border-b border-neutral-800/80 flex items-center justify-between shrink-0">
+      <span class="text-[11px] font-mono uppercase tracking-widest text-neutral-500">RSC</span>
+      <div class="flex items-center gap-1.5">
+        <button 
+          id="btn-reset" 
+          type="button"
+          class="px-2.5 py-1 text-xs font-medium rounded bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
+        >
+          Reset
+        </button>
+        <button 
+          id="btn-copy" 
+          type="button"
+          class="px-2.5 py-1 text-xs font-medium rounded bg-neutral-100 hover:bg-white text-neutral-950 transition-colors cursor-pointer"
+        >
+          Copy
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Output -->
+    <div class="flex-1 p-4 overflow-auto">
+      <pre id="rsc-output" class="font-mono text-sm leading-relaxed text-neutral-100 whitespace-pre select-all">@section.main at 0xD730 backup 0xE9E0</pre>
+    </div>
+
+  </aside>
+
+  <div id="bm-modal">
+    <div id="bm-box">
+      <div id="bm-bar">
+        <span>W:</span><input id="bm-w" type="number" min="1" max="128" value="8">
+        <span>H:</span><input id="bm-h" type="number" min="1" max="128" value="8">
+        <button id="bm-resize" type="button">Resize</button>
+        <button id="bm-clear" type="button">Clear</button>
+        <button id="bm-inv" type="button">Invert</button>
+        <button id="bm-done" type="button">Done</button>
+      </div>
+      <div id="bm-wrap"><canvas id="bm-cv"></canvas></div>
+    </div>
+  </div>
+
+  <script>
+(() => {
+  const GREEN = '#2e8b57', ORANGE = '#d97706', BLUE = '#2563eb', PURPLE = '#7c3aed';
+  const svg = d => 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="rgba(0,0,0,.28)"/><path d="${d}" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`
+  );
+  const ADD_ICON = svg('M8 4v8M4 8h8');
+  const SUB_ICON = svg('M4 8h8');
+
+  class FieldBtn extends Blockly.Field {
+    constructor(text, fn) {
+      super(text);
+      this.EDITABLE = true;
+      this.SERIALIZABLE = true;
+      this.CURSOR = 'pointer';
+      this.fn_ = fn;
+    }
+    showEditor_() {
+      const b = this.getSourceBlock();
+      if (b && !b.isInFlyout && this.fn_) this.fn_(b);
+    }
+  }
+
+  let dtStmt = false;
+
+  function setDtShape(b, asStmt) {
+    b.isStmt_ = !!asStmt && !b.isShadow();
+    if (b.isStmt_) {
+      b.setOutput(false);
+      b.setPreviousStatement(true, 'STMT');
+      b.setNextStatement(true, 'STMT');
+    } else {
+      b.setPreviousStatement(false);
+      b.setNextStatement(false);
+      b.setOutput(true);
+    }
+  }
+
+  function dtExtra() {
+    return {
+      saveExtraState() { return { stmt: this.isStmt_ }; },
+      loadExtraState(s) { setDtShape(this, s && s.stmt); }
+    };
+  }
+
+  const fmtHex = raw => {
+    const t = raw.trim();
+    return t ? (/\s/.test(t) ? t.replace(/\s+/g, ' ') : (t.match(/.{1,2}/g) || []).join(' ')) : '';
+  };
+  const stripHex = s => s.replace(/^hex\s+/i, '').trim();
+  const hex0x = v => '0x' + v.trim().replace(/^0x/i, '');
+
+  // --- Bitmap Editor ---
+  const bmModal = document.getElementById('bm-modal');
+  const bmW = document.getElementById('bm-w');
+  const bmH = document.getElementById('bm-h');
+  const bmCv = document.getElementById('bm-cv');
+  const bmCtx = bmCv.getContext('2d');
+  let activeBmBlock = null, editW = 8, editH = 8, editBits = [], paintVal = 1, painting = false;
+
+  function drawBm() {
+    const cell = Math.max(8, Math.min(22, Math.floor(360 / Math.max(editW, editH))));
+    bmCv.width = editW * cell;
+    bmCv.height = editH * cell;
+    bmCv.dataset.cell = String(cell);
+    drawBmPixels();
+  }
+
+  function drawBmPixels() {
+    const cell = Number(bmCv.dataset.cell) || 8;
+    bmCtx.fillStyle = '#fff';
+    bmCtx.fillRect(0, 0, bmCv.width, bmCv.height);
+    bmCtx.fillStyle = '#000';
+    for (let y = 0; y < editH; y++) {
+      for (let x = 0; x < editW; x++) {
+        if (editBits[y * editW + x]) bmCtx.fillRect(x * cell, y * cell, cell, cell);
+      }
+    }
+    bmCtx.strokeStyle = '#ccc';
+    bmCtx.lineWidth = 1;
+    for (let x = 0; x <= editW; x++) {
+      bmCtx.beginPath(); bmCtx.moveTo(x * cell + .5, 0); bmCtx.lineTo(x * cell + .5, bmCv.height); bmCtx.stroke();
+    }
+    for (let y = 0; y <= editH; y++) {
+      bmCtx.beginPath(); bmCtx.moveTo(0, y * cell + .5); bmCtx.lineTo(bmCv.width, y * cell + .5); bmCtx.stroke();
+    }
+  }
+
+  function openBmEditor(block) {
+    if (!block || block.isInFlyout || !block.workspace || block.workspace !== ws) return;
+    activeBmBlock = block;
+    editW = block.bmW_;
+    editH = block.bmH_;
+    editBits = block.bmBits_.slice();
+    bmW.value = editW;
+    bmH.value = editH;
+    const flyout = ws.getFlyout();
+    if (flyout && flyout.isVisible()) flyout.hide();
+    bmModal.style.display = 'flex';
+    drawBm();
+    Blockly.svgResize(ws);
+  }
+
+  function cvCell(e) {
+    const r = bmCv.getBoundingClientRect();
+    const x = Math.floor((e.clientX - r.left) / (r.width / editW));
+    const y = Math.floor((e.clientY - r.top) / (r.height / editH));
+    return (x >= 0 && x < editW && y >= 0 && y < editH) ? y * editW + x : -1;
+  }
+
+  bmCv.addEventListener('pointerdown', e => {
+    const i = cvCell(e);
+    if (i < 0) return;
+    painting = true;
+    bmCv.setPointerCapture(e.pointerId);
+    paintVal = editBits[i] ? 0 : 1;
+    editBits[i] = paintVal;
+    drawBmPixels();
+  });
+  bmCv.addEventListener('pointermove', e => {
+    if (!painting) return;
+    const i = cvCell(e);
+    if (i >= 0 && editBits[i] !== paintVal) {
+      editBits[i] = paintVal;
+      drawBmPixels();
+    }
+  });
+  bmCv.addEventListener('pointerup', () => { painting = false; });
+  bmCv.addEventListener('pointercancel', () => { painting = false; });
+  bmCv.addEventListener('lostpointercapture', () => { painting = false; });
+
+  document.getElementById('bm-resize').onclick = () => {
+    const nw = Math.max(1, Math.min(128, parseInt(bmW.value, 10) || 8));
+    const nh = Math.max(1, Math.min(128, parseInt(bmH.value, 10) || 8));
+    bmW.value = nw; bmH.value = nh;
+    const next = new Array(nw * nh).fill(0);
+    for (let y = 0; y < Math.min(editH, nh); y++) {
+      for (let x = 0; x < Math.min(editW, nw); x++) {
+        next[y * nw + x] = editBits[y * editW + x] || 0;
+      }
+    }
+    editW = nw; editH = nh; editBits = next;
+    drawBm();
+  };
+  document.getElementById('bm-clear').onclick = () => { editBits.fill(0); drawBm(); };
+  document.getElementById('bm-inv').onclick = () => { editBits = editBits.map(v => v ? 0 : 1); drawBm(); };
+  document.getElementById('bm-done').onclick = () => {
+    if (activeBmBlock) {
+      activeBmBlock.bmW_ = editW;
+      activeBmBlock.bmH_ = editH;
+      activeBmBlock.bmBits_ = editBits.slice();
+      out.textContent = RSC.workspaceToCode(ws);
+    }
+    bmModal.style.display = 'none';
+    activeBmBlock = null;
+    Blockly.svgResize(ws);
+  };
+  bmModal.addEventListener('click', e => { if (e.target === bmModal) document.getElementById('bm-done').click(); });
+  bmModal.addEventListener('pointerdown', e => e.stopPropagation());
+  bmModal.addEventListener('pointerup', e => e.stopPropagation());
+  bmModal.addEventListener('keydown', e => e.stopPropagation());
+
+  // Shadow-only reporters for inline hex slots (unaffected by Datatypes toggle)
+  Blockly.Blocks['rsc_hex_byte'] = {
+    init() {
+      this.appendDummyInput().appendField('hex').appendField(new Blockly.FieldTextInput('00'), 'V');
+      this.setOutput(true);
+      this.setColour(GREEN);
+    }
+  };
+
+  Blockly.Blocks['rsc_hex_addr'] = {
+    init() {
+      this.appendDummyInput().appendField(new Blockly.FieldTextInput('0000'), 'V');
+      this.setOutput(true);
+      this.setColour(GREEN);
+    }
+  };
+
+  // --- 1. Datatypes ---
+  Blockly.Blocks['rsc_string'] = {
+    init() {
+      this.appendDummyInput().appendField('string').appendField(new Blockly.FieldTextInput(''), 'V');
+      this.setColour(GREEN);
+      setDtShape(this, dtStmt);
+    },
+    ...dtExtra()
+  };
+
+  Blockly.Blocks['rsc_integer'] = {
+    init() {
+      this.appendDummyInput().appendField('integer').appendField(new Blockly.FieldNumber(0, -Infinity, Infinity, 1), 'V');
+      this.setColour(GREEN);
+      setDtShape(this, dtStmt);
+    },
+    ...dtExtra()
+  };
+
+  Blockly.Blocks['rsc_hex'] = {
+    init() {
+      this.appendDummyInput().appendField('hex').appendField(new Blockly.FieldTextInput('00'), 'V');
+      this.setColour(GREEN);
+      setDtShape(this, dtStmt);
+    },
+    ...dtExtra()
+  };
+
+  Blockly.Blocks['rsc_0x'] = {
+    init() {
+      this.appendDummyInput().appendField('0x').appendField(new Blockly.FieldTextInput('00'), 'V');
+      this.setColour(GREEN);
+      setDtShape(this, dtStmt);
+    },
+    ...dtExtra()
+  };
+
+  // Immutable output-only shadow for value inputs. Blockly can initialize a
+  // shadow before its shadow flag is set, so it must not use the datatype toggle.
+  Blockly.Blocks['rsc_0x_shadow'] = {
+    init() {
+      this.appendDummyInput().appendField('0x').appendField(new Blockly.FieldTextInput('00'), 'V');
+      this.setOutput(true);
+      this.setColour(GREEN);
+    }
+  };
+
+  Blockly.Blocks['rsc_token'] = {
+    init() {
+      this.appendDummyInput().appendField('token').appendField(new Blockly.FieldTextInput(''), 'V');
+      this.setColour(GREEN);
+      setDtShape(this, dtStmt);
+    },
+    ...dtExtra()
+  };
+
+  Blockly.Blocks['rsc_bitmap'] = {
+    init() {
+      this.bmW_ = 8;
+      this.bmH_ = 8;
+      this.bmBits_ = new Array(64).fill(0);
+      this.appendDummyInput()
+        .appendField('bitmap')
+        .appendField(new FieldBtn('click to open', b => openBmEditor(b)), 'BTN');
+      this.setColour(GREEN);
+      setDtShape(this, dtStmt);
+    },
+    saveExtraState() {
+      return { stmt: this.isStmt_, w: this.bmW_, h: this.bmH_, b: this.bmBits_.join('') };
+    },
+    loadExtraState(s) {
+      setDtShape(this, s && s.stmt);
+      if (s && s.w && s.h) {
+        this.bmW_ = s.w;
+        this.bmH_ = s.h;
+        this.bmBits_ = (s.b || '').padEnd(s.w * s.h, '0').split('').map(c => c === '1' ? 1 : 0);
+      }
+    }
+  };
+
+  Blockly.Blocks['rsc_table'] = {
+    init() {
+      this.itemCount_ = 0;
+      this.setInputsInline(true);
+      this.appendDummyInput('HDR').appendField('table');
+      this.appendDummyInput('BTNS')
+        .appendField(new Blockly.FieldImage(ADD_ICON, 16, 16, '', () => {
+          if (!this.isInFlyout) this.setItems_(this.itemCount_ + 1);
+        }))
+        .appendField(new Blockly.FieldImage(SUB_ICON, 16, 16, '', () => {
+          if (!this.isInFlyout && this.itemCount_ > 0) this.setItems_(this.itemCount_ - 1);
+        }));
+      this.setItems_(2);
+      this.setColour(GREEN);
+      setDtShape(this, dtStmt);
+    },
+    setItems_(n) {
+      while (this.itemCount_ < n) {
+        const name = 'I' + this.itemCount_++;
+        this.appendValueInput(name);
+        this.moveInputBefore(name, 'BTNS');
+      }
+      while (this.itemCount_ > n) {
+        this.removeInput('I' + --this.itemCount_);
+      }
+    },
+    saveExtraState() { return { stmt: this.isStmt_, n: this.itemCount_ }; },
+    loadExtraState(s) {
+      setDtShape(this, s && s.stmt);
+      this.setItems_(s && typeof s.n === 'number' ? s.n : 2);
+    }
+  };
+
+  // --- 2. Starter Blocks ---
+  Blockly.Blocks['rsc_section'] = {
+    init() {
+      this.hat = 'cap';
+      this.hasBackup_ = false;
+      this.bakVal_ = '0000';
+      this.setInputsInline(true);
+      this.appendDummyInput('MAIN')
+        .appendField('section')
+        .appendField(new Blockly.FieldTextInput('main'), 'NAME')
+        .appendField('at')
+        .appendField(new Blockly.FieldTextInput('0000'), 'ADDR');
+      this.appendDummyInput('BTN')
+        .appendField(new Blockly.FieldImage(ADD_ICON, 16, 16, '', () => {
+          if (!this.isInFlyout) this.setBackup_(!this.hasBackup_);
+        }), 'TOGGLE');
+      this.setNextStatement(true, 'LABEL');
+      this.setColour(ORANGE);
+    },
+    setBackup_(on) {
+      on = !!on;
+      if (on === this.hasBackup_) return;
+      this.hasBackup_ = on;
+      if (on) {
+        this.appendDummyInput('BAK')
+          .appendField('backup')
+          .appendField(new Blockly.FieldTextInput(this.bakVal_), 'BACKUP');
+        this.moveInputBefore('BAK', 'BTN');
+        this.getField('TOGGLE').setValue(SUB_ICON);
+      } else {
+        this.bakVal_ = this.getFieldValue('BACKUP') || '0000';
+        this.removeInput('BAK');
+        this.getField('TOGGLE').setValue(ADD_ICON);
+      }
+    },
+    saveExtraState() { return { bak: this.hasBackup_ }; },
+    loadExtraState(s) { this.setBackup_(s && s.bak); }
+  };
+
+  Blockly.Blocks['rsc_break'] = {
+    init() {
+      this.appendDummyInput().appendField('break');
+      this.setPreviousStatement(true, 'STMT');
+      this.setColour(ORANGE);
+    }
+  };
+
+  Blockly.Blocks['rsc_reset'] = {
+    init() {
+      this.appendDummyInput()
+        .appendField('reset')
+        .appendField(new Blockly.FieldDropdown([
+          ['all', 'all'], ['buffer', 'buffer'], ['lr_pc', 'lr_pc'],
+          ['sfr', 'sfr'], ['di,rt', 'di,rt']
+        ]), 'OPT');
+      this.setPreviousStatement(true, 'STMT');
+      this.setNextStatement(true, 'STMT');
+      this.setColour(ORANGE);
+    }
+  };
+
+  // --- 3. Memory ---
+  Blockly.Blocks['rsc_label'] = {
+    init() {
+      this.appendDummyInput().appendField('label').appendField(new Blockly.FieldTextInput('start'), 'NAME');
+      this.appendStatementInput('BODY');
+      this.setPreviousStatement(true, ['LABEL', 'STMT']);
+      this.setNextStatement(true, ['LABEL', 'STMT']);
+      this.setColour(BLUE);
+    }
+  };
+
+  Blockly.Blocks['rsc_addr_of'] = {
+    init() {
+      this.appendDummyInput().appendField('address of').appendField(new Blockly.FieldTextInput(''), 'NAME');
+      this.setOutput(true);
+      this.setColour(BLUE);
+    }
+  };
+
+  Blockly.Blocks['rsc_set_addr'] = {
+    init() {
+      this.setInputsInline(true);
+      this.appendValueInput('ADDR').appendField('set value at address');
+      this.appendValueInput('VAL').appendField('to');
+      this.setPreviousStatement(true, 'STMT');
+      this.setNextStatement(true, 'STMT');
+      this.setColour(BLUE);
+    }
+  };
+
+  // --- 4. Gadgets ---
+  Blockly.Blocks['rsc_printline'] = {
+    init() {
+      this.setInputsInline(true);
+      this.appendValueInput('X').appendField('print line at');
+      this.appendValueInput('Y');
+      this.appendValueInput('ADDR').appendField(', address');
+      this.setPreviousStatement(true, 'STMT');
+      this.setNextStatement(true, 'STMT');
+      this.setColour(PURPLE);
+    }
+  };
+
+  Blockly.Blocks['rsc_render'] = {
+    init() {
+      this.appendDummyInput().appendField('render');
+      this.setPreviousStatement(true, 'STMT');
+      this.setNextStatement(true, 'STMT');
+      this.setColour(PURPLE);
+    }
+  };
+
+  Blockly.Blocks['rsc_waitshift'] = {
+    init() {
+      this.appendDummyInput().appendField('wait for shift');
+      this.setPreviousStatement(true, 'STMT');
+      this.setNextStatement(true, 'STMT');
+      this.setColour(PURPLE);
+    }
+  };
+
+  Blockly.Blocks['rsc_render_bitmap'] = {
+    init() {
+      this.setInputsInline(true);
+      this.appendValueInput('B0').appendField('render bitmap at');
+      this.appendValueInput('B1');
+      this.appendValueInput('B2');
+      this.appendValueInput('B3');
+      this.appendValueInput('ASSET').appendField('with asset');
+      this.setPreviousStatement(true, 'STMT');
+      this.setNextStatement(true, 'STMT');
+      this.setColour(PURPLE);
+    }
+  };
+
+  // --- RSC Generator ---
+  const RSC = new Blockly.Generator('RSC');
+  RSC.INDENT = '  ';
+  const emitDt = (b, code) => b.outputConnection ? [code, 0] : code + '\n';
+
+  RSC.scrub_ = function(block, code, thisOnly) {
+    if (thisOnly) return code;
+    let next = block.nextConnection && block.nextConnection.targetBlock();
+    if (block.type === 'rsc_section' || (block.type === 'rsc_label' && !block.getSurroundParent())) {
+      while (next && next.type !== 'rsc_label') {
+        next = next.nextConnection && next.nextConnection.targetBlock();
+      }
+    }
+    return next ? code + this.blockToCode(next) : code;
+  };
+
+  RSC.workspaceToCode = function(ws) {
+    this.init(ws);
+    const out = [];
+    for (const b of ws.getTopBlocks(true)) {
+      if (b.type !== 'rsc_section' || !b.isEnabled()) continue;
+      const c = this.blockToCode(b);
+      if (c) out.push((Array.isArray(c) ? c[0] : c).trimEnd());
+    }
+    return this.finish(out.join('\n\n'));
+  };
+
+  RSC.forBlock['rsc_hex_byte'] = b => {
+    const bytes = fmtHex(b.getFieldValue('V'));
+    return [bytes ? 'hex ' + bytes : 'hex', 0];
+  };
+  RSC.forBlock['rsc_hex_addr'] = b => [b.getFieldValue('V').trim(), 0];
+
+  RSC.forBlock['rsc_string']  = b => emitDt(b, `"${b.getFieldValue('V')}"`);
+  RSC.forBlock['rsc_integer'] = b => emitDt(b, String(b.getFieldValue('V')));
+  RSC.forBlock['rsc_token']   = b => emitDt(b, `'${b.getFieldValue('V')}'`);
+  RSC.forBlock['rsc_0x']      = b => emitDt(b, hex0x(b.getFieldValue('V')));
+  RSC.forBlock['rsc_hex']     = b => {
+    const bytes = fmtHex(b.getFieldValue('V'));
+    return emitDt(b, bytes ? 'hex ' + bytes : 'hex');
+  };
+  RSC.forBlock['rsc_bitmap']  = b => {
+    const bytes = [];
+    for (let y = 0; y < b.bmH_; y++) {
+      for (let x = 0; x < b.bmW_; x += 8) {
+        let byte = 0;
+        for (let bit = 0; bit < 8; bit++) {
+          if (x + bit < b.bmW_ && b.bmBits_[y * b.bmW_ + x + bit]) byte |= (1 << (7 - bit));
+        }
+        bytes.push(byte.toString(16).padStart(2, '0'));
+      }
+    }
+    return emitDt(b, bytes.length ? 'hex ' + bytes.join(' ') : 'hex');
+  };
+  RSC.forBlock['rsc_table']   = (b, g) => {
+    const vals = [];
+    for (let i = 0; i < b.itemCount_; i++) {
+      const v = g.valueToCode(b, 'I' + i, 0);
+      if (v !== '') vals.push(v);
+    }
+    return emitDt(b, `[${vals.join(',')}]`);
+  };
+
+  RSC.forBlock['rsc_section'] = b => {
+    const bak = b.hasBackup_ ? ` backup ${hex0x(b.getFieldValue('BACKUP'))}` : '';
+    return `@section.${b.getFieldValue('NAME')} at ${hex0x(b.getFieldValue('ADDR'))}${bak}\n`;
+  };
+  RSC.forBlock['rsc_break'] = () => 'brk\n';
+
+  const RESET_OUT = {
+    all: 'setlr_pc\nsetsfr\ndi,rt',
+    buffer: 'buffer_clear',
+    lr_pc: 'setlr_pc',
+    sfr: 'setsfr',
+    'di,rt': 'di,rt'
+  };
+  RSC.forBlock['rsc_reset'] = b => RESET_OUT[b.getFieldValue('OPT')] + '\n';
+
+  RSC.forBlock['rsc_label'] = (b, g) =>
+    `lbl ${b.getFieldValue('NAME')}\n${g.statementToCode(b, 'BODY')}`;
+  RSC.forBlock['rsc_addr_of'] = b => [`adr(${b.getFieldValue('NAME')})`, 0];
+  RSC.forBlock['rsc_set_addr'] = (b, g) => {
+    const addr = stripHex(g.valueToCode(b, 'ADDR', 0) || '0x0000');
+    const val = g.valueToCode(b, 'VAL', 0) || '0x00';
+    return `xr0 = ${addr}, ${val}, 0x00\n[er0]=r2\n`;
+  };
+
+  RSC.forBlock['rsc_printline'] = (b, g) => {
+    const x = stripHex(g.valueToCode(b, 'X', 0) || '00');
+    const y = stripHex(g.valueToCode(b, 'Y', 0) || '00');
+    const addr = g.valueToCode(b, 'ADDR', 0) || '0000';
+    return `xr0 = hex ${x} ${y}, ${addr}\nprintline\n`;
+  };
+  RSC.forBlock['rsc_render'] = () => 'render.ddd4\n';
+  RSC.forBlock['rsc_waitshift'] = () => 'waitshift\n';
+  RSC.forBlock['rsc_render_bitmap'] = (b, g) => {
+    const b0 = stripHex(g.valueToCode(b, 'B0', 0) || '00');
+    const b1 = stripHex(g.valueToCode(b, 'B1', 0) || '00');
+    const b2 = stripHex(g.valueToCode(b, 'B2', 0) || '00');
+    const b3 = stripHex(g.valueToCode(b, 'B3', 0) || '00');
+    const rawAsset = (g.valueToCode(b, 'ASSET', 0) || '0x0000').trim();
+    const asset = /^(0x|adr\()/i.test(rawAsset) ? rawAsset : hex0x(rawAsset);
+    return `xr0 = hex ${b0} ${b1} ${b2} ${b3}\nrender_bitmap\ner0 = ${asset}\n`;
+  };
+
+  // --- Workspace ---
+  const ws = Blockly.inject(document.getElementById('blocklyDiv'), {
+    trashcan: true,
+    grid: { spacing: 20, length: 2, colour: '#d4d4d8', snap: true },
+    zoom: { controls: true, wheel: true, startScale: 1, maxScale: 2, minScale: 0.5 },
+    renderer: 'zelos',
+    toolbox: {
+      kind: 'categoryToolbox',
+      contents: [
+        {
+          kind: 'category', name: 'Datatypes', colour: GREEN,
+          contents: [
+            { kind: 'button', text: 'switch block type', callbackKey: 'SWITCH_DT' },
+            { kind: 'block', type: 'rsc_string' },
+            { kind: 'block', type: 'rsc_integer' },
+            { kind: 'block', type: 'rsc_hex' },
+            { kind: 'block', type: 'rsc_0x' },
+            { kind: 'block', type: 'rsc_bitmap' },
+            { kind: 'block', type: 'rsc_table' },
+            { kind: 'block', type: 'rsc_token' }
+          ]
+        },
+        {
+          kind: 'category', name: 'Starter Blocks', colour: ORANGE,
+          contents: [
+            { kind: 'block', type: 'rsc_section' },
+            { kind: 'block', type: 'rsc_break' },
+            { kind: 'block', type: 'rsc_reset' }
+          ]
+        },
+        {
+          kind: 'category', name: 'Memory', colour: BLUE,
+          contents: [
+            { kind: 'block', type: 'rsc_label' },
+            { kind: 'block', type: 'rsc_addr_of' },
+            {
+              kind: 'block', type: 'rsc_set_addr',
+              inputs: {
+                ADDR: { shadow: { type: 'rsc_0x_shadow', fields: { V: '0000' } } },
+                VAL: { shadow: { type: 'rsc_0x_shadow', fields: { V: '00' } } }
+              }
+            }
+          ]
+        },
+        {
+          kind: 'category', name: 'Gadgets', colour: PURPLE,
+          contents: [
+            {
+              kind: 'block', type: 'rsc_printline',
+              inputs: {
+                X: { shadow: { type: 'rsc_hex_byte', fields: { V: '00' } } },
+                Y: { shadow: { type: 'rsc_hex_byte', fields: { V: '00' } } },
+                ADDR: { shadow: { type: 'rsc_hex_addr', fields: { V: '0000' } } }
+              }
+            },
+            {
+              kind: 'block', type: 'rsc_render_bitmap',
+              inputs: {
+                B0: { shadow: { type: 'rsc_hex_byte', fields: { V: '00' } } },
+                B1: { shadow: { type: 'rsc_hex_byte', fields: { V: '00' } } },
+                B2: { shadow: { type: 'rsc_hex_byte', fields: { V: '00' } } },
+                B3: { shadow: { type: 'rsc_hex_byte', fields: { V: '00' } } },
+                ASSET: { shadow: { type: 'rsc_0x_shadow', fields: { V: '0000' } } }
+              }
+            },
+            { kind: 'block', type: 'rsc_render' },
+            { kind: 'block', type: 'rsc_waitshift' }
+          ]
+        }
+      ]
+    }
+  });
+
+  ws.registerButtonCallback('SWITCH_DT', () => {
+    dtStmt = !dtStmt;
+    ws.getToolbox().refreshSelection();
+  });
+
+  const out = document.getElementById('rsc-output');
+  ws.addChangeListener(e => {
+    if (e.type === Blockly.Events.BLOCK_MOVE && !ws.isDragging()) {
+      for (const sec of ws.getTopBlocks(false)) {
+        if (sec.type !== 'rsc_section') continue;
+        let cur = sec.getNextBlock();
+        while (cur) {
+          if (cur.type !== 'rsc_label') {
+            cur.previousConnection.disconnect();
+            cur.moveBy(24, 24);
+            break;
+          }
+          cur = cur.getNextBlock();
+        }
+      }
+    }
+    if (!e.isUiEvent) out.textContent = RSC.workspaceToCode(ws);
+  });
+
+  function updateOutput() { out.textContent = RSC.workspaceToCode(ws); }
+  function initializeDefaultBlocks() {
+    ws.clear();
+    const section = ws.newBlock('rsc_section');
+    section.setFieldValue('main', 'NAME');
+    section.setFieldValue('D730', 'ADDR');
+    section.setBackup_(true);
+    section.setFieldValue('E9E0', 'BACKUP');
+    section.initSvg(); section.render(); section.moveBy(32, 32);
+    section.setDeletable(false);
+    updateOutput();
+  }
+  document.getElementById('btn-reset').addEventListener('click', initializeDefaultBlocks);
+  document.getElementById('btn-copy').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-copy');
+    try {
+      await navigator.clipboard.writeText(out.textContent || '');
+      btn.textContent = 'Copied';
+      setTimeout(() => btn.textContent = 'Copy', 1200);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = out.textContent || ''; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+      btn.textContent = 'Copied'; setTimeout(() => btn.textContent = 'Copy', 1200);
+    }
+  });
+  window.addEventListener('resize', () => Blockly.svgResize(ws));
+  window.addEventListener('load', () => { initializeDefaultBlocks(); Blockly.svgResize(ws); });
+
+})();
+
+  </script>
+</body>
+</html>
