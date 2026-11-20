@@ -39,35 +39,243 @@
       pointer-events: none !important;
     }
 
-    /* Ensure trashcan and zoom controls remain clickable above workspace layers */
+    /* Light-mode Gemini-styled Blockly UI (workspace & blocks only) */
+    @keyframes rscBlockEnter {
+      0% { opacity: 0; filter: brightness(1.18) drop-shadow(0 0 12px rgba(37, 99, 235, 0.35)); }
+      100% { opacity: 1; filter: brightness(1) drop-shadow(0 2px 5px rgba(15, 23, 42, 0.14)); }
+    }
+    @keyframes rscBlockSnap {
+      0% { filter: drop-shadow(0 0 0 rgba(37, 99, 235, 0)); }
+      35% { filter: drop-shadow(0 0 10px rgba(37, 99, 235, 0.55)); }
+      100% { filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.14)); }
+    }
+    @keyframes rscMenuPop {
+      0% { opacity: 0; transform: translateY(-4px) scale(0.98); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes rscFlyoutFade {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    .rsc-anim-enter > .blocklyPath {
+      animation: rscBlockEnter 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .rsc-anim-snap > .blocklyPath {
+      animation: rscBlockSnap 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
     .blocklyTrash {
       cursor: pointer;
+      opacity: 0.72;
+      transition: opacity 150ms ease, filter 150ms ease;
     }
+    .blocklyTrash:hover {
+      opacity: 1;
+      filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.2));
+    }
+    .blocklyZoom {
+      opacity: 0.75;
+      transition: opacity 150ms ease;
+    }
+    .blocklyZoom:hover { opacity: 1; }
 
-    /* Clean minimalist toolbox styling */
     .blocklyToolboxDiv {
-      background-color: #171717 !important;
-      border-right: 1px solid #262626;
-      padding-top: 8px;
+      background-color: #f1f5f9 !important;
+      border-right: 1px solid #e2e8f0;
+      padding-top: 10px;
     }
-
     .blocklyTreeRow {
-      height: 28px !important;
-      line-height: 28px !important;
-      margin: 1px 4px !important;
-      border-radius: 4px !important;
-      padding-right: 8px !important;
+      height: 34px !important;
+      line-height: 34px !important;
+      margin: 2px 8px !important;
+      border-radius: 8px !important;
+      padding-right: 12px !important;
+      transition: background-color 150ms ease, transform 150ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 150ms ease;
     }
-
+    .blocklyTreeRow:hover {
+      background-color: #e2e8f0 !important;
+      transform: translateX(2px);
+    }
+    .blocklyTreeRow.blocklyTreeSelected {
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+      transform: translateX(2px);
+    }
     .blocklyTreeLabel {
       font-family: 'Inter', sans-serif !important;
-      font-size: 12px !important;
-      font-weight: 400 !important;
-      color: #e5e5e5 !important;
+      font-size: 13.5px !important;
+      font-weight: 500 !important;
+      color: #334155 !important;
+      transition: color 150ms ease;
     }
-
     .blocklyTreeSelected .blocklyTreeLabel {
       color: #ffffff !important;
+      font-weight: 600 !important;
+    }
+
+    .blocklyFlyout {
+      animation: rscFlyoutFade 160ms ease-out;
+    }
+    .blocklyFlyoutBackground {
+      fill: #f1f5f9 !important;
+      fill-opacity: 0.96 !important;
+    }
+
+    .blocklyPath {
+      stroke-width: 1.25px;
+      transition: filter 160ms ease, stroke 160ms ease, stroke-width 160ms ease;
+    }
+    .blocklyDraggable > .blocklyPath {
+      filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.14));
+    }
+    .blocklyDraggable:hover > .blocklyPath {
+      filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.2));
+    }
+    .blocklyDragging > .blocklyPath {
+      filter: drop-shadow(0 12px 24px rgba(15, 23, 42, 0.28));
+    }
+    .blocklySelected > .blocklyPath {
+      stroke: #1e293b !important;
+      stroke-width: 2.2px !important;
+      filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.3));
+    }
+
+    /* Bigger, crisp block label typography */
+    .blocklyText {
+      font-family: 'Inter', sans-serif !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      fill: #ffffff !important;
+      letter-spacing: 0.005em;
+    }
+
+    /* Fixed light-mode editable field & dropdown pills (Blockly v9–v12+ compatible) */
+    .blocklyEditableField > rect.blocklyFieldRect,
+    .blocklyEditableText > rect.blocklyFieldRect,
+    .blocklyEditableField > .blocklyFieldRect,
+    .blocklyEditableText > .blocklyFieldRect,
+    .blocklyDropdownRect {
+      fill: #ffffff !important;
+      fill-opacity: 0.96 !important;
+      stroke: rgba(15, 23, 42, 0.18) !important;
+      stroke-width: 1px !important;
+      rx: 7px;
+      ry: 7px;
+      transition: fill 140ms ease, stroke 140ms ease;
+    }
+    .blocklyEditableField:hover > rect.blocklyFieldRect,
+    .blocklyEditableText:hover > rect.blocklyFieldRect,
+    .blocklyEditableField:hover > .blocklyFieldRect,
+    .blocklyEditableText:hover > .blocklyFieldRect,
+    .blocklyEditableField:hover > .blocklyDropdownRect {
+      fill: #ffffff !important;
+      fill-opacity: 1 !important;
+      stroke: rgba(15, 23, 42, 0.42) !important;
+    }
+    .blocklySvg .blocklyEditableField > text.blocklyText,
+    .blocklySvg .blocklyEditableText > text.blocklyText,
+    .blocklySvg .blocklyEditableField text.blocklyText,
+    .blocklySvg .blocklyEditableText text.blocklyText,
+    .blocklySvg text.blocklyDropdownText,
+    .blocklySvg text.blocklyDropdownText tspan,
+    .blocklySvg .blocklyDropdownText,
+    .blocklySvg .blocklyDropdownText tspan {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      fill: #0f172a !important;
+    }
+    .blocklyHtmlInput {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      border: 1.5px solid #2563eb !important;
+      border-radius: 7px !important;
+      outline: none !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18) !important;
+      transition: box-shadow 140ms ease, border-color 140ms ease;
+    }
+
+    /* Light-mode dropdown & context menus */
+    body .blocklyDropDownDiv {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 10px !important;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16) !important;
+      animation: rscMenuPop 140ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    body .blocklyDropDownDiv .blocklyDropDownArrow {
+      background-color: #ffffff !important;
+      border-color: #cbd5e1 !important;
+    }
+    body .blocklyDropDownDiv .blocklyMenu {
+      background-color: transparent !important;
+    }
+    body .blocklyDropDownDiv .blocklyMenuItem,
+    body .blocklyDropDownDiv .blocklyMenuItemContent {
+      color: #0f172a !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 13px !important;
+      border-radius: 6px !important;
+      transition: background-color 120ms ease, color 120ms ease;
+    }
+    body .blocklyDropDownDiv .blocklyMenuItemSelected .blocklyMenuItemContent {
+      color: #0f172a !important;
+      font-weight: 600 !important;
+    }
+    body .blocklyDropDownDiv .blocklyMenuItemCheckbox {
+      filter: brightness(0) saturate(100%) invert(26%) sepia(93%) saturate(2351%) hue-rotate(213deg) brightness(95%) contrast(94%) !important;
+    }
+    body .blocklyDropDownDiv .blocklyMenuItemHighlight,
+    body .blocklyWidgetDiv .blocklyMenuItemHighlight {
+      background-color: rgba(37, 99, 235, 0.12) !important;
+    }
+    body .blocklyDropDownDiv .blocklyMenuItemHighlight .blocklyMenuItemContent,
+    body .blocklyWidgetDiv .blocklyMenuItemHighlight .blocklyMenuItemContent {
+      color: #1d4ed8 !important;
+    }
+    body .blocklyWidgetDiv .blocklyMenu {
+      background-color: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 10px !important;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16) !important;
+      padding: 4px !important;
+      animation: rscMenuPop 140ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    body .blocklyWidgetDiv .blocklyMenuItemContent {
+      color: #1e293b !important;
+      font-family: 'Inter', sans-serif !important;
+      font-size: 13px !important;
+    }
+    body .blocklyDropDownDiv .blocklyMenuItemDisabled .blocklyMenuItemContent,
+    body .blocklyWidgetDiv .blocklyMenuItemDisabled .blocklyMenuItemContent {
+      color: #94a3b8 !important;
+    }
+
+    /* Light-mode flyout buttons */
+    .blocklyFlyoutButton { cursor: pointer; }
+    .blocklyFlyoutButtonShadow { fill: transparent !important; }
+    .blocklyFlyoutButtonBackground {
+      fill: #ffffff !important;
+      stroke: #cbd5e1 !important;
+      stroke-width: 1px !important;
+      rx: 8px;
+      ry: 8px;
+      transition: fill 150ms ease, stroke 150ms ease, filter 150ms ease;
+    }
+    .blocklyFlyoutButton:hover .blocklyFlyoutButtonBackground {
+      fill: #eff6ff !important;
+      stroke: #2563eb !important;
+      filter: drop-shadow(0 2px 5px rgba(37, 99, 235, 0.16));
+    }
+    .blocklyFlyoutButton .blocklyText {
+      fill: #1e293b !important;
+      font-family: 'Inter', sans-serif !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
     }
  
     #bm-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); align-items:center; justify-content:center; z-index:999; padding:16px; }
@@ -77,6 +285,16 @@
     #bm-bar button { background:#333; color:#eee; border:1px solid #666; padding:2px 8px; font:inherit; cursor:pointer; }
     #bm-wrap { overflow:auto; max-height:65vh; border:1px solid #444; background:#fff; align-self:center; }
     #bm-cv { display:block; cursor:crosshair; image-rendering:pixelated; }
+    #ui-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.68); align-items:center; justify-content:center; z-index:1000; padding:16px; }
+    #ui-modal-box { width:min(360px, 90vw); background:#1e1e1e; color:#eee; border:1px solid #525252; border-radius:6px; padding:16px; box-shadow:0 12px 40px rgba(0,0,0,.35); }
+    #ui-modal-title { margin:0 0 12px; font-size:14px; font-weight:600; }
+    #ui-modal-body { display:flex; flex-direction:column; gap:8px; font-size:13px; }
+    #ui-modal-body input, #ui-modal-body select { width:100%; box-sizing:border-box; background:#111; color:#eee; border:1px solid #555; border-radius:3px; padding:7px 8px; }
+    #ui-modal-actions { display:flex; justify-content:flex-end; gap:6px; margin-top:12px; }
+    #ui-modal-actions button { border:1px solid #666; border-radius:3px; background:#333; color:#eee; padding:5px 10px; cursor:pointer; }
+    #ui-modal-actions button:last-child { background:#e5e5e5; color:#171717; border-color:#e5e5e5; }
+    #btn-about { width:18px; height:18px; padding:0; border:0; border-radius:50%; background:transparent; color:#525252; font-size:12px; line-height:18px; }
+    #btn-about:hover { color:#a3a3a3; }
 
   </style>
 </head>
@@ -94,6 +312,7 @@
     <div class="px-3 py-2 border-b border-neutral-800/80 flex items-center justify-between shrink-0">
       <span class="text-[11px] font-mono uppercase tracking-widest text-neutral-500">RSC</span>
       <div class="flex items-center gap-1.5">
+        <button id="btn-about" type="button" title="About">i</button>
         <button 
           id="btn-reset" 
           type="button"
@@ -131,12 +350,55 @@
       <div id="bm-wrap"><canvas id="bm-cv"></canvas></div>
     </div>
   </div>
+  <div id="ui-modal">
+    <div id="ui-modal-box">
+      <h2 id="ui-modal-title"></h2>
+      <div id="ui-modal-body"></div>
+      <div id="ui-modal-actions">
+        <button id="ui-modal-cancel" type="button">Cancel</button>
+        <button id="ui-modal-confirm" type="button">OK</button>
+      </div>
+    </div>
+  </div>
 
   <script>
 (() => {
-  const GREEN = '#2e8b57', ORANGE = '#d97706', BLUE = '#2563eb', PURPLE = '#7c3aed';
+  const geminiTheme = Blockly.Theme.defineTheme('rscGeminiLight', {
+    base: Blockly.Themes.Zelos || Blockly.Themes.Classic,
+    blockStyles: {
+      dt_blocks:      { colourPrimary: '#0f766e', colourSecondary: '#115e59', colourTertiary: '#134e4a' },
+      starter_blocks: { colourPrimary: '#d95716', colourSecondary: '#b8430b', colourTertiary: '#9a3412' },
+      memory_blocks:  { colourPrimary: '#2563eb', colourSecondary: '#1d4ed8', colourTertiary: '#1e40af' },
+      gadget_blocks:  { colourPrimary: '#7c3aed', colourSecondary: '#6d28d9', colourTertiary: '#5b21b6' }
+    },
+    categoryStyles: {
+      dt_category:      { colour: '#0f766e' },
+      starter_category: { colour: '#d95716' },
+      memory_category:  { colour: '#2563eb' },
+      gadget_category:  { colour: '#7c3aed' }
+    },
+    componentStyles: {
+      workspaceBackgroundColour: '#f8fafc',
+      toolboxBackgroundColour: '#f1f5f9',
+      toolboxForegroundColour: '#334155',
+      flyoutBackgroundColour: '#f1f5f9',
+      flyoutForegroundColour: '#1e293b',
+      flyoutOpacity: 0.96,
+      scrollbarColour: '#cbd5e1',
+      scrollbarOpacity: 0.8,
+      insertionMarkerColour: '#2563eb',
+      insertionMarkerOpacity: 0.35,
+      selectedGlowColour: '#2563eb',
+      selectedGlowOpacity: 0.3
+    },
+    fontStyle: {
+      family: 'Inter, sans-serif',
+      weight: '500',
+      size: 14
+    }
+  });
   const svg = d => 'data:image/svg+xml;utf8,' + encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="rgba(0,0,0,.28)"/><path d="${d}" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="4.5" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.55)" stroke-width="1"/><path d="${d}" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg>`
   );
   const ADD_ICON = svg('M8 4v8M4 8h8');
   const SUB_ICON = svg('M4 8h8');
@@ -156,6 +418,36 @@
   }
 
   let dtStmt = false;
+  let ws = null;
+
+  const uiModal = document.getElementById('ui-modal');
+  const uiModalTitle = document.getElementById('ui-modal-title');
+  const uiModalBody = document.getElementById('ui-modal-body');
+  const uiModalConfirm = document.getElementById('ui-modal-confirm');
+  const uiModalCancel = document.getElementById('ui-modal-cancel');
+  let uiModalAction = null;
+
+  function openUiModal(title, bodyHtml, actionLabel, action) {
+    uiModalTitle.textContent = title;
+    uiModalBody.innerHTML = bodyHtml;
+    uiModalConfirm.textContent = actionLabel;
+    uiModalAction = action;
+    uiModal.style.display = 'flex';
+    const firstInput = uiModalBody.querySelector('input, select');
+    if (firstInput) firstInput.focus();
+  }
+
+  function closeUiModal() {
+    uiModal.style.display = 'none';
+    uiModalAction = null;
+  }
+
+  uiModalConfirm.addEventListener('click', () => {
+    if (uiModalAction) uiModalAction(uiModalBody);
+  });
+  uiModalCancel.addEventListener('click', closeUiModal);
+  uiModal.addEventListener('click', e => { if (e.target === uiModal) closeUiModal(); });
+  uiModal.addEventListener('keydown', e => e.stopPropagation());
 
   function setDtShape(b, asStmt) {
     b.isStmt_ = !!asStmt && !b.isShadow();
@@ -299,15 +591,15 @@
     init() {
       this.appendDummyInput().appendField('hex').appendField(new Blockly.FieldTextInput('00'), 'V');
       this.setOutput(true);
-      this.setColour(GREEN);
+      this.setStyle('dt_blocks');
     }
   };
 
   Blockly.Blocks['rsc_hex_addr'] = {
     init() {
-      this.appendDummyInput().appendField(new Blockly.FieldTextInput('0000'), 'V');
+      this.appendDummyInput().appendField('0x').appendField(new Blockly.FieldTextInput('0000'), 'V');
       this.setOutput(true);
-      this.setColour(GREEN);
+      this.setStyle('dt_blocks');
     }
   };
 
@@ -315,7 +607,7 @@
   Blockly.Blocks['rsc_string'] = {
     init() {
       this.appendDummyInput().appendField('string').appendField(new Blockly.FieldTextInput(''), 'V');
-      this.setColour(GREEN);
+      this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
     ...dtExtra()
@@ -324,7 +616,7 @@
   Blockly.Blocks['rsc_integer'] = {
     init() {
       this.appendDummyInput().appendField('integer').appendField(new Blockly.FieldNumber(0, -Infinity, Infinity, 1), 'V');
-      this.setColour(GREEN);
+      this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
     ...dtExtra()
@@ -332,17 +624,44 @@
 
   Blockly.Blocks['rsc_hex'] = {
     init() {
-      this.appendDummyInput().appendField('hex').appendField(new Blockly.FieldTextInput('00'), 'V');
-      this.setColour(GREEN);
+      this.itemCount_ = 0;
+      this.setInputsInline(true);
+      this.appendDummyInput('HDR').appendField('hex');
+      this.appendDummyInput('BTNS')
+        .appendField(new Blockly.FieldImage(ADD_ICON, 16, 16, '', () => {
+          if (!this.isInFlyout) this.setItems_(this.itemCount_ + 1);
+        }))
+        .appendField(new Blockly.FieldImage(SUB_ICON, 16, 16, '', () => {
+          if (!this.isInFlyout && this.itemCount_ > 1) this.setItems_(this.itemCount_ - 1);
+        }));
+      this.setItems_(1);
+      this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
-    ...dtExtra()
+    setItems_(n) {
+      n = Math.max(1, n);
+      while (this.itemCount_ < n) {
+        const idx = this.itemCount_++;
+        const name = 'B' + idx;
+        this.appendDummyInput(name).appendField(new Blockly.FieldTextInput('00'), 'V' + idx);
+        this.moveInputBefore(name, 'BTNS');
+      }
+      while (this.itemCount_ > n) {
+        this.removeInput('B' + --this.itemCount_);
+      }
+      if (!this.isInFlyout && ws && this.workspace === ws) updateOutput();
+    },
+    saveExtraState() { return { stmt: this.isStmt_, n: this.itemCount_ }; },
+    loadExtraState(s) {
+      setDtShape(this, s && s.stmt);
+      this.setItems_(s && typeof s.n === 'number' ? s.n : 1);
+    }
   };
 
   Blockly.Blocks['rsc_0x'] = {
     init() {
       this.appendDummyInput().appendField('0x').appendField(new Blockly.FieldTextInput('00'), 'V');
-      this.setColour(GREEN);
+      this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
     ...dtExtra()
@@ -354,14 +673,14 @@
     init() {
       this.appendDummyInput().appendField('0x').appendField(new Blockly.FieldTextInput('00'), 'V');
       this.setOutput(true);
-      this.setColour(GREEN);
+      this.setStyle('dt_blocks');
     }
   };
 
   Blockly.Blocks['rsc_token'] = {
     init() {
       this.appendDummyInput().appendField('token').appendField(new Blockly.FieldTextInput(''), 'V');
-      this.setColour(GREEN);
+      this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
     ...dtExtra()
@@ -375,7 +694,7 @@
       this.appendDummyInput()
         .appendField('bitmap')
         .appendField(new FieldBtn('click to open', b => openBmEditor(b)), 'BTN');
-      this.setColour(GREEN);
+      this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
     saveExtraState() {
@@ -404,7 +723,7 @@
           if (!this.isInFlyout && this.itemCount_ > 0) this.setItems_(this.itemCount_ - 1);
         }));
       this.setItems_(2);
-      this.setColour(GREEN);
+      this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
     setItems_(n) {
@@ -416,6 +735,7 @@
       while (this.itemCount_ > n) {
         this.removeInput('I' + --this.itemCount_);
       }
+      if (!this.isInFlyout && ws && this.workspace === ws) updateOutput();
     },
     saveExtraState() { return { stmt: this.isStmt_, n: this.itemCount_ }; },
     loadExtraState(s) {
@@ -441,7 +761,7 @@
           if (!this.isInFlyout) this.setBackup_(!this.hasBackup_);
         }), 'TOGGLE');
       this.setNextStatement(true, 'LABEL');
-      this.setColour(ORANGE);
+      this.setStyle('starter_blocks');
     },
     setBackup_(on) {
       on = !!on;
@@ -458,6 +778,10 @@
         this.removeInput('BAK');
         this.getField('TOGGLE').setValue(ADD_ICON);
       }
+      if (!this.isInFlyout && ws && this.workspace === ws) {
+        validateLoopBackBlocks();
+        updateOutput();
+      }
     },
     saveExtraState() { return { bak: this.hasBackup_ }; },
     loadExtraState(s) { this.setBackup_(s && s.bak); }
@@ -467,7 +791,7 @@
     init() {
       this.appendDummyInput().appendField('break');
       this.setPreviousStatement(true, 'STMT');
-      this.setColour(ORANGE);
+      this.setStyle('starter_blocks');
     }
   };
 
@@ -481,7 +805,7 @@
         ]), 'OPT');
       this.setPreviousStatement(true, 'STMT');
       this.setNextStatement(true, 'STMT');
-      this.setColour(ORANGE);
+      this.setStyle('starter_blocks');
     }
   };
 
@@ -492,7 +816,7 @@
       this.appendStatementInput('BODY');
       this.setPreviousStatement(true, ['LABEL', 'STMT']);
       this.setNextStatement(true, ['LABEL', 'STMT']);
-      this.setColour(BLUE);
+      this.setStyle('memory_blocks');
     }
   };
 
@@ -500,7 +824,7 @@
     init() {
       this.appendDummyInput().appendField('address of').appendField(new Blockly.FieldTextInput(''), 'NAME');
       this.setOutput(true);
-      this.setColour(BLUE);
+      this.setStyle('memory_blocks');
     }
   };
 
@@ -511,7 +835,21 @@
       this.appendValueInput('VAL').appendField('to');
       this.setPreviousStatement(true, 'STMT');
       this.setNextStatement(true, 'STMT');
-      this.setColour(BLUE);
+      this.setStyle('memory_blocks');
+    }
+  };
+
+  Blockly.Blocks['rsc_loop_back'] = {
+    init() {
+      this.setInputsInline(true);
+      this.appendValueInput('ADDR').appendField('loop back to');
+      if (this.appendEndRowInput) this.appendEndRowInput();
+      this.appendDummyInput()
+        .appendField('label')
+        .appendField(new Blockly.FieldTextInput('restore'), 'NAME');
+      this.setPreviousStatement(true, ['LABEL', 'STMT']);
+      this.setNextStatement(true, ['LABEL', 'STMT']);
+      this.setStyle('memory_blocks');
     }
   };
 
@@ -524,7 +862,7 @@
       this.appendValueInput('ADDR').appendField(', address');
       this.setPreviousStatement(true, 'STMT');
       this.setNextStatement(true, 'STMT');
-      this.setColour(PURPLE);
+      this.setStyle('gadget_blocks');
     }
   };
 
@@ -533,7 +871,7 @@
       this.appendDummyInput().appendField('render');
       this.setPreviousStatement(true, 'STMT');
       this.setNextStatement(true, 'STMT');
-      this.setColour(PURPLE);
+      this.setStyle('gadget_blocks');
     }
   };
 
@@ -542,7 +880,7 @@
       this.appendDummyInput().appendField('wait for shift');
       this.setPreviousStatement(true, 'STMT');
       this.setNextStatement(true, 'STMT');
-      this.setColour(PURPLE);
+      this.setStyle('gadget_blocks');
     }
   };
 
@@ -556,7 +894,59 @@
       this.appendValueInput('ASSET').appendField('with asset');
       this.setPreviousStatement(true, 'STMT');
       this.setNextStatement(true, 'STMT');
-      this.setColour(PURPLE);
+      this.setStyle('gadget_blocks');
+    }
+  };
+
+  Blockly.Blocks['rsc_delay'] = {
+    init() {
+      this.setInputsInline(true);
+      this.appendValueInput('TICKS').appendField('delay for');
+      this.appendDummyInput().appendField('ticks');
+      this.setPreviousStatement(true, 'STMT');
+      this.setNextStatement(true, 'STMT');
+      this.setStyle('gadget_blocks');
+    }
+  };
+
+  Blockly.Blocks['rsc_calculate'] = {
+    init() {
+      this.setInputsInline(true);
+      this.appendValueInput('CALC_PTR').appendField('calculate');
+      if (this.appendEndRowInput) this.appendEndRowInput();
+      this.appendValueInput('RESULT_ADDR').appendField('and save in address');
+      this.setPreviousStatement(true, 'STMT');
+      this.setNextStatement(true, 'STMT');
+      this.setStyle('gadget_blocks');
+    }
+  };
+
+  Blockly.Blocks['rsc_set_invert'] = {
+    init() {
+      this.appendDummyInput()
+        .appendField('set invert to')
+        .appendField(new Blockly.FieldDropdown([
+          ['normal', '0x01'],
+          ['inverted', '0x04']
+        ]), 'MODE');
+      this.setPreviousStatement(true, 'STMT');
+      this.setNextStatement(true, 'STMT');
+      this.setStyle('gadget_blocks');
+    }
+  };
+
+  Blockly.Blocks['rsc_draw_line'] = {
+    init() {
+      this.setInputsInline(true);
+      (this.appendEndRowInput ? this.appendEndRowInput() : this.appendDummyInput()).appendField('draw a line');
+      this.appendValueInput('X1').appendField('from');
+      this.appendValueInput('Y1').appendField(',');
+      if (this.appendEndRowInput) this.appendEndRowInput();
+      this.appendValueInput('X2').appendField('to');
+      this.appendValueInput('Y2').appendField(',');
+      this.setPreviousStatement(true, 'STMT');
+      this.setNextStatement(true, 'STMT');
+      this.setStyle('gadget_blocks');
     }
   };
 
@@ -565,11 +955,13 @@
   RSC.INDENT = '  ';
   const emitDt = (b, code) => b.outputConnection ? [code, 0] : code + '\n';
 
+  const isLabelBlock = b => !!b && (b.type === 'rsc_label' || b.type === 'rsc_loop_back');
+
   RSC.scrub_ = function(block, code, thisOnly) {
     if (thisOnly) return code;
     let next = block.nextConnection && block.nextConnection.targetBlock();
-    if (block.type === 'rsc_section' || (block.type === 'rsc_label' && !block.getSurroundParent())) {
-      while (next && next.type !== 'rsc_label') {
+    if (block.type === 'rsc_section' || (isLabelBlock(block) && !block.getSurroundParent())) {
+      while (next && !isLabelBlock(next)) {
         next = next.nextConnection && next.nextConnection.targetBlock();
       }
     }
@@ -596,10 +988,15 @@
   RSC.forBlock['rsc_string']  = b => emitDt(b, `"${b.getFieldValue('V')}"`);
   RSC.forBlock['rsc_integer'] = b => emitDt(b, String(b.getFieldValue('V')));
   RSC.forBlock['rsc_token']   = b => emitDt(b, `'${b.getFieldValue('V')}'`);
-  RSC.forBlock['rsc_0x']      = b => emitDt(b, hex0x(b.getFieldValue('V')));
+  RSC.forBlock['rsc_0x']        = b => emitDt(b, hex0x(b.getFieldValue('V')));
+  RSC.forBlock['rsc_0x_shadow'] = b => [hex0x(b.getFieldValue('V')), 0];
   RSC.forBlock['rsc_hex']     = b => {
-    const bytes = fmtHex(b.getFieldValue('V'));
-    return emitDt(b, bytes ? 'hex ' + bytes : 'hex');
+    const parts = [];
+    for (let i = 0; i < b.itemCount_; i++) {
+      const bytes = fmtHex(b.getFieldValue('V' + i) || '');
+      if (bytes) parts.push(bytes);
+    }
+    return emitDt(b, parts.length ? 'hex ' + parts.join(' ') : 'hex');
   };
   RSC.forBlock['rsc_bitmap']  = b => {
     const bytes = [];
@@ -646,36 +1043,70 @@
     const val = g.valueToCode(b, 'VAL', 0) || '0x00';
     return `xr0 = ${addr}, ${val}, 0x00\n[er0]=r2\n`;
   };
+  RSC.forBlock['rsc_loop_back'] = (b, g) => {
+    const root = b.getRootBlock();
+    const secName = (root && root.type === 'rsc_section' ? (root.getFieldValue('NAME') || 'main').trim() : 'main') || 'main';
+    const name = (b.getFieldValue('NAME') || 'restore').trim() || 'restore';
+    const addr = (g.valueToCode(b, 'ADDR', 0) || '0x0000').trim();
+    const ind = RSC.INDENT;
+    return (
+      `lbl ${name}\n` +
+      `${ind}pop xr4, pop xr12\n` +
+      `${ind}${addr}\n` +
+      `${ind}hex fe03\n` +
+      `${ind}eval(${addr}+dist.${secName})\n` +
+      `${ind}eval(${addr}-12)\n` +
+      `${ind}memcpy_auto_jump\n`
+    );
+  };
 
   RSC.forBlock['rsc_printline'] = (b, g) => {
-    const x = stripHex(g.valueToCode(b, 'X', 0) || '00');
-    const y = stripHex(g.valueToCode(b, 'Y', 0) || '00');
-    const addr = g.valueToCode(b, 'ADDR', 0) || '0000';
-    return `xr0 = hex ${x} ${y}, ${addr}\nprintline\n`;
+    const x = (g.valueToCode(b, 'X', 0) || 'hex 00').trim();
+    const y = (g.valueToCode(b, 'Y', 0) || 'hex 00').trim();
+    const addr = (g.valueToCode(b, 'ADDR', 0) || '0x0000').trim();
+    return `xr0 = ${x}, ${y}, ${addr}\nprintline\n`;
   };
   RSC.forBlock['rsc_render'] = () => 'render.ddd4\n';
   RSC.forBlock['rsc_waitshift'] = () => 'waitshift\n';
   RSC.forBlock['rsc_render_bitmap'] = (b, g) => {
-    const b0 = stripHex(g.valueToCode(b, 'B0', 0) || '00');
-    const b1 = stripHex(g.valueToCode(b, 'B1', 0) || '00');
-    const b2 = stripHex(g.valueToCode(b, 'B2', 0) || '00');
-    const b3 = stripHex(g.valueToCode(b, 'B3', 0) || '00');
-    const rawAsset = (g.valueToCode(b, 'ASSET', 0) || '0x0000').trim();
-    const asset = /^(0x|adr\()/i.test(rawAsset) ? rawAsset : hex0x(rawAsset);
-    return `xr0 = hex ${b0} ${b1} ${b2} ${b3}\nrender_bitmap\ner0 = ${asset}\n`;
+    const b0 = (g.valueToCode(b, 'B0', 0) || 'hex 00').trim();
+    const b1 = (g.valueToCode(b, 'B1', 0) || 'hex 00').trim();
+    const b2 = (g.valueToCode(b, 'B2', 0) || 'hex 00').trim();
+    const b3 = (g.valueToCode(b, 'B3', 0) || 'hex 00').trim();
+    const asset = (g.valueToCode(b, 'ASSET', 0) || '0x0000').trim();
+    return `xr0 = ${b0}, ${b1}, ${b2}, ${b3}\nrender_bitmap\ner0 = ${asset}\n`;
+  };
+  RSC.forBlock['rsc_delay'] = (b, g) => {
+    const ticks = (g.valueToCode(b, 'TICKS', 0) || '0x0000').trim();
+    return `er0 = ${ticks}\ndelay\n`;
+  };
+  RSC.forBlock['rsc_calculate'] = (b, g) => {
+    const calcPtr = (g.valueToCode(b, 'CALC_PTR', 0) || '0x0000').trim();
+    const resultAddr = (g.valueToCode(b, 'RESULT_ADDR', 0) || '0x0000').trim();
+    return `xr0 = ${calcPtr}, ${resultAddr}\ncalc_func\n`;
+  };
+  RSC.forBlock['rsc_set_invert'] = b =>
+    `xr0 = 0xD138, ${b.getFieldValue('MODE') || '0x01'}, 0x00\n[er0]=r2\n`;
+  RSC.forBlock['rsc_draw_line'] = (b, g) => {
+    const x1 = (g.valueToCode(b, 'X1', 0) || '0x00').trim();
+    const y1 = (g.valueToCode(b, 'Y1', 0) || '0x00').trim();
+    const x2 = (g.valueToCode(b, 'X2', 0) || '0x00').trim();
+    const y2 = (g.valueToCode(b, 'Y2', 0) || '0x00').trim();
+    return `xr0 = ${x1}, ${y1}, ${x2}, ${y2}\nline_draw\n`;
   };
 
   // --- Workspace ---
-  const ws = Blockly.inject(document.getElementById('blocklyDiv'), {
+  ws = Blockly.inject(document.getElementById('blocklyDiv'), {
     trashcan: true,
-    grid: { spacing: 20, length: 2, colour: '#d4d4d8', snap: true },
-    zoom: { controls: true, wheel: true, startScale: 1, maxScale: 2, minScale: 0.5 },
+    theme: geminiTheme,
+    grid: { spacing: 24, length: 2, colour: '#cbd5e1', snap: true },
+    zoom: { controls: true, wheel: true, startScale: 0.8, maxScale: 2, minScale: 0.5 },
     renderer: 'zelos',
     toolbox: {
       kind: 'categoryToolbox',
       contents: [
         {
-          kind: 'category', name: 'Datatypes', colour: GREEN,
+          kind: 'category', name: 'Datatypes', categorystyle: 'dt_category',
           contents: [
             { kind: 'button', text: 'switch block type', callbackKey: 'SWITCH_DT' },
             { kind: 'block', type: 'rsc_string' },
@@ -688,7 +1119,7 @@
           ]
         },
         {
-          kind: 'category', name: 'Starter Blocks', colour: ORANGE,
+          kind: 'category', name: 'Starter Blocks', categorystyle: 'starter_category',
           contents: [
             { kind: 'block', type: 'rsc_section' },
             { kind: 'block', type: 'rsc_break' },
@@ -696,7 +1127,7 @@
           ]
         },
         {
-          kind: 'category', name: 'Memory', colour: BLUE,
+          kind: 'category', name: 'Memory', categorystyle: 'memory_category',
           contents: [
             { kind: 'block', type: 'rsc_label' },
             { kind: 'block', type: 'rsc_addr_of' },
@@ -706,18 +1137,24 @@
                 ADDR: { shadow: { type: 'rsc_0x_shadow', fields: { V: '0000' } } },
                 VAL: { shadow: { type: 'rsc_0x_shadow', fields: { V: '00' } } }
               }
+            },
+            {
+              kind: 'block', type: 'rsc_loop_back',
+              inputs: {
+                ADDR: { shadow: { type: 'rsc_0x_shadow', fields: { V: '0000' } } }
+              }
             }
           ]
         },
         {
-          kind: 'category', name: 'Gadgets', colour: PURPLE,
+          kind: 'category', name: 'Gadgets', categorystyle: 'gadget_category',
           contents: [
             {
               kind: 'block', type: 'rsc_printline',
               inputs: {
                 X: { shadow: { type: 'rsc_hex_byte', fields: { V: '00' } } },
                 Y: { shadow: { type: 'rsc_hex_byte', fields: { V: '00' } } },
-                ADDR: { shadow: { type: 'rsc_hex_addr', fields: { V: '0000' } } }
+                ADDR: { shadow: { type: 'rsc_0x_shadow', fields: { V: '0000' } } }
               }
             },
             {
@@ -731,7 +1168,30 @@
               }
             },
             { kind: 'block', type: 'rsc_render' },
-            { kind: 'block', type: 'rsc_waitshift' }
+            { kind: 'block', type: 'rsc_waitshift' },
+            {
+              kind: 'block', type: 'rsc_delay',
+              inputs: {
+                TICKS: { shadow: { type: 'rsc_0x_shadow', fields: { V: '0000' } } }
+              }
+            },
+            {
+              kind: 'block', type: 'rsc_calculate',
+              inputs: {
+                CALC_PTR: { shadow: { type: 'rsc_0x_shadow', fields: { V: '0000' } } },
+                RESULT_ADDR: { shadow: { type: 'rsc_0x_shadow', fields: { V: '0000' } } }
+              }
+            },
+            { kind: 'block', type: 'rsc_set_invert' },
+            {
+              kind: 'block', type: 'rsc_draw_line',
+              inputs: {
+                X1: { shadow: { type: 'rsc_0x_shadow', fields: { V: '00' } } },
+                Y1: { shadow: { type: 'rsc_0x_shadow', fields: { V: '00' } } },
+                X2: { shadow: { type: 'rsc_0x_shadow', fields: { V: '00' } } },
+                Y2: { shadow: { type: 'rsc_0x_shadow', fields: { V: '00' } } }
+              }
+            }
           ]
         }
       ]
@@ -743,21 +1203,86 @@
     ws.getToolbox().refreshSelection();
   });
 
+  document.getElementById('btn-about').addEventListener('click', () => {
+    openUiModal(
+      'About',
+      '<p>Made by Pancake and Omelets, @pancake94_ on Discord.</p>',
+      'Close',
+      closeUiModal
+    );
+  });
+
   const out = document.getElementById('rsc-output');
+  let sectionWarningShown = false;
+  let backupWarningShown = false;
+
+  function pulseBlock(blockId, cls, ms) {
+    const blk = blockId && ws.getBlockById(blockId);
+    if (!blk || blk.isShadow()) return;
+    const root = blk.getSvgRoot && blk.getSvgRoot();
+    if (!root) return;
+    root.classList.remove(cls);
+    void root.getBoundingClientRect();
+    root.classList.add(cls);
+    setTimeout(() => root.classList.remove(cls), ms);
+  }
+
+  function validateLoopBackBlocks(showModalOnMissing) {
+    let missingFound = false;
+    for (const blk of ws.getAllBlocks(false)) {
+      if (blk.type !== 'rsc_loop_back') continue;
+      const root = blk.getRootBlock();
+      if (root && root.type === 'rsc_section' && root.hasBackup_) {
+        blk.setWarningText(null);
+      } else if (root && root.type === 'rsc_section') {
+        blk.setWarningText('Requires this section block to have a backup address.');
+        missingFound = true;
+      } else {
+        blk.setWarningText(null);
+      }
+    }
+    if (showModalOnMissing && missingFound && !backupWarningShown) {
+      backupWarningShown = true;
+      openUiModal(
+        'Backup address required',
+        '<p>The "loop back" block uses dist.&lt;section&gt;, which requires its section block to have a backup address. Click + on the section block to enable backup.</p>',
+        'OK',
+        () => { closeUiModal(); backupWarningShown = false; }
+      );
+    }
+  }
+
   ws.addChangeListener(e => {
+    if (e.type === Blockly.Events.BLOCK_CREATE && e.blockId) {
+      pulseBlock(e.blockId, 'rsc-anim-enter', 220);
+    }
     if (e.type === Blockly.Events.BLOCK_MOVE && !ws.isDragging()) {
+      if (e.newParentId && e.newParentId !== e.oldParentId) {
+        pulseBlock(e.blockId, 'rsc-anim-snap', 340);
+      }
       for (const sec of ws.getTopBlocks(false)) {
         if (sec.type !== 'rsc_section') continue;
         let cur = sec.getNextBlock();
         while (cur) {
-          if (cur.type !== 'rsc_label') {
+          if (!isLabelBlock(cur)) {
             cur.previousConnection.disconnect();
             cur.moveBy(24, 24);
+            if (!sectionWarningShown) {
+              sectionWarningShown = true;
+              openUiModal(
+                'Invalid section placement',
+                '<p>Code can only be placed inside labels in a section tower.</p>',
+                'OK',
+                () => { closeUiModal(); sectionWarningShown = false; }
+              );
+            }
             break;
           }
           cur = cur.getNextBlock();
         }
       }
+      const moved = e.blockId && ws.getBlockById(e.blockId);
+      validateLoopBackBlocks(!!(moved && moved.type === 'rsc_loop_back'));
     }
     if (!e.isUiEvent) out.textContent = RSC.workspaceToCode(ws);
   });
