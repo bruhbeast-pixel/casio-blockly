@@ -149,12 +149,13 @@
       letter-spacing: 0.005em;
     }
 
-    /* Fixed light-mode editable field & dropdown pills (Blockly v9–v12+ compatible) */
-    .blocklyEditableField > rect.blocklyFieldRect,
-    .blocklyEditableText > rect.blocklyFieldRect,
-    .blocklyEditableField > .blocklyFieldRect,
-    .blocklyEditableText > .blocklyFieldRect,
-    .blocklyDropdownRect {
+    /* Fixed light-mode editable field & dropdown pills (workspace + flyout tray, beats Zelos !important rules) */
+    #blocklyDiv .blocklyFieldRect,
+    #blocklyDiv .blocklyDropdownRect,
+    #blocklyDiv .blocklyEditableField > rect.blocklyFieldRect,
+    #blocklyDiv .blocklyEditableText > rect.blocklyFieldRect,
+    #blocklyDiv .blocklyNonEditableField > rect.blocklyFieldRect,
+    #blocklyDiv .blocklyNonEditableText > rect.blocklyFieldRect {
       fill: #ffffff !important;
       fill-opacity: 0.96 !important;
       stroke: rgba(15, 23, 42, 0.18) !important;
@@ -163,23 +164,36 @@
       ry: 7px;
       transition: fill 140ms ease, stroke 140ms ease;
     }
-    .blocklyEditableField:hover > rect.blocklyFieldRect,
-    .blocklyEditableText:hover > rect.blocklyFieldRect,
-    .blocklyEditableField:hover > .blocklyFieldRect,
-    .blocklyEditableText:hover > .blocklyFieldRect,
-    .blocklyEditableField:hover > .blocklyDropdownRect {
+    #blocklyDiv .blocklyEditableField:hover > rect.blocklyFieldRect,
+    #blocklyDiv .blocklyEditableText:hover > rect.blocklyFieldRect,
+    #blocklyDiv .blocklyEditableField:hover > .blocklyFieldRect,
+    #blocklyDiv .blocklyEditableText:hover > .blocklyFieldRect,
+    #blocklyDiv .blocklyEditableField:hover > .blocklyDropdownRect {
       fill: #ffffff !important;
       fill-opacity: 1 !important;
       stroke: rgba(15, 23, 42, 0.42) !important;
     }
-    .blocklySvg .blocklyEditableField > text.blocklyText,
-    .blocklySvg .blocklyEditableText > text.blocklyText,
-    .blocklySvg .blocklyEditableField text.blocklyText,
-    .blocklySvg .blocklyEditableText text.blocklyText,
-    .blocklySvg text.blocklyDropdownText,
-    .blocklySvg text.blocklyDropdownText tspan,
-    .blocklySvg .blocklyDropdownText,
-    .blocklySvg .blocklyDropdownText tspan {
+    #blocklyDiv .blocklyFieldRect ~ text.blocklyText,
+    #blocklyDiv .blocklyFieldRect ~ text.blocklyText tspan,
+    #blocklyDiv .blocklyFieldRect ~ g text.blocklyText,
+    #blocklyDiv .blocklyFieldRect ~ g text.blocklyText tspan,
+    #blocklyDiv .blocklyDropdownRect ~ text.blocklyText,
+    #blocklyDiv .blocklyDropdownRect ~ text.blocklyText tspan,
+    #blocklyDiv .blocklyDropdownRect ~ g text.blocklyText,
+    #blocklyDiv .blocklyDropdownRect ~ g text.blocklyText tspan,
+    #blocklyDiv .blocklyEditableField text.blocklyText,
+    #blocklyDiv .blocklyEditableField text.blocklyText tspan,
+    #blocklyDiv .blocklyEditableText text.blocklyText,
+    #blocklyDiv .blocklyEditableText text.blocklyText tspan,
+    #blocklyDiv .blocklyNonEditableField text.blocklyText,
+    #blocklyDiv .blocklyNonEditableField text.blocklyText tspan,
+    #blocklyDiv .blocklyNonEditableText text.blocklyText,
+    #blocklyDiv .blocklyNonEditableText text.blocklyText tspan,
+    #blocklyDiv text.blocklyDropdownText,
+    #blocklyDiv text.blocklyDropdownText tspan,
+    #blocklyDiv .blocklyDropdownText,
+    #blocklyDiv .blocklyDropdownText tspan,
+    #blocklyDiv .blocklyDropdownArrow {
       font-family: 'JetBrains Mono', monospace !important;
       font-size: 13px !important;
       font-weight: 500 !important;
@@ -271,7 +285,7 @@
       stroke: #2563eb !important;
       filter: drop-shadow(0 2px 5px rgba(37, 99, 235, 0.16));
     }
-    .blocklyFlyoutButton .blocklyText {
+    #blocklyDiv .blocklyFlyoutButton .blocklyText {
       fill: #1e293b !important;
       font-family: 'Inter', sans-serif !important;
       font-size: 13px !important;
@@ -295,6 +309,18 @@
     #ui-modal-actions button:last-child { background:#e5e5e5; color:#171717; border-color:#e5e5e5; }
     #btn-about { width:18px; height:18px; padding:0; border:0; border-radius:50%; background:transparent; color:#525252; font-size:12px; line-height:18px; }
     #btn-about:hover { color:#a3a3a3; }
+    #notif-win {
+      display:none; position:fixed; right:20px; bottom:20px; width:min(380px, calc(100vw - 32px)); max-height:46vh;
+      background:#111111; color:#e5e5e5; border:1px solid #2e2e2e; border-radius:8px;
+      box-shadow:0 16px 40px rgba(0,0,0,.55); z-index:950; flex-direction:column; overflow:hidden;
+    }
+    #notif-hdr {
+      display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px;
+      background:#171717; border-bottom:1px solid #262626; cursor:move; user-select:none;
+    }
+    #notif-list { padding:8px 10px; overflow:auto; display:flex; flex-direction:column; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12px; }
+    .notif-item { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:5px; padding:6px 8px; white-space:pre-wrap; word-break:break-word; color:#e5e5e5; }
+    .notif-empty { color:#737373; font-style:italic; padding:4px 2px; }
 
   </style>
 </head>
@@ -309,14 +335,48 @@
   <aside class="w-full lg:w-[380px] xl:w-[440px] h-[42%] lg:h-full bg-neutral-950 border-t lg:border-t-0 lg:border-l border-neutral-800 flex flex-col shrink-0">
     
     <!-- Minimal Controls Strip -->
-    <div class="px-3 py-2 border-b border-neutral-800/80 flex items-center justify-between shrink-0">
-      <span class="text-[11px] font-mono uppercase tracking-widest text-neutral-500">RSC</span>
+    <div class="px-3 py-2 border-b border-neutral-800/80 flex flex-wrap items-center justify-between gap-1.5 shrink-0">
       <div class="flex items-center gap-1.5">
+        <span class="text-[11px] font-mono uppercase tracking-widest text-neutral-500">RSC</span>
         <button id="btn-about" type="button" title="About">i</button>
+      </div>
+      <div class="flex flex-wrap items-center gap-1.5">
+        <button 
+          id="btn-save" 
+          type="button"
+          title="Save project file (Ctrl+S)"
+          class="px-2 py-1 text-xs font-medium rounded bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
+        >
+          Save
+        </button>
+        <button 
+          id="btn-load" 
+          type="button"
+          title="Load project file"
+          class="px-2 py-1 text-xs font-medium rounded bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
+        >
+          Load
+        </button>
+        <input id="file-load" type="file" accept=".json,.rscb" class="hidden" />
+        <button 
+          id="btn-notifs" 
+          type="button"
+          title="Notifications"
+          class="px-2 py-1 text-xs font-medium rounded bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition-colors cursor-pointer flex items-center gap-1"
+        >
+          <span>Notifs</span><span id="notif-badge" class="text-[10px] font-mono px-1 rounded bg-neutral-800 text-neutral-400">0</span>
+        </button>
+        <button 
+          id="btn-compile" 
+          type="button"
+          class="px-2.5 py-1 text-xs font-medium rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-wait text-white transition-colors cursor-pointer"
+        >
+          Compile
+        </button>
         <button 
           id="btn-reset" 
           type="button"
-          class="px-2.5 py-1 text-xs font-medium rounded bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
+          class="px-2 py-1 text-xs font-medium rounded bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 transition-colors cursor-pointer"
         >
           Reset
         </button>
@@ -331,11 +391,61 @@
     </div>
 
     <!-- Live Output -->
-    <div class="flex-1 p-4 overflow-auto">
+    <div class="flex-1 min-h-0 p-4 overflow-auto">
       <pre id="rsc-output" class="font-mono text-sm leading-relaxed text-neutral-100 whitespace-pre select-all">@section.main at 0xD730 backup 0xE9E0</pre>
     </div>
 
+    <!-- Compiled Output Pane -->
+    <div id="compile-pane" class="hidden h-[44%] border-t border-neutral-800 bg-neutral-950 flex flex-col shrink-0">
+      <div class="px-3 py-1.5 border-b border-neutral-800/80 flex items-center justify-between shrink-0 bg-neutral-900/60">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-mono uppercase tracking-widest text-neutral-400">Compiled</span>
+          <span id="compile-status" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">Idle</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button 
+            id="btn-api-url" 
+            type="button"
+            title="Configure compiler API / proxy URL"
+            class="px-2 py-0.5 text-[11px] font-medium rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-colors cursor-pointer"
+          >
+            API
+          </button>
+          <button 
+            id="btn-copy-compiled" 
+            type="button"
+            class="px-2 py-0.5 text-[11px] font-medium rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 transition-colors cursor-pointer"
+          >
+            Copy
+          </button>
+          <button 
+            id="btn-close-compiled" 
+            type="button"
+            title="Close"
+            class="px-1.5 py-0.5 text-xs text-neutral-400 hover:text-neutral-100 cursor-pointer"
+          >
+            &times;
+          </button>
+        </div>
+      </div>
+      <div class="flex-1 min-h-0 p-3 overflow-auto">
+        <pre id="compile-output" class="font-mono text-xs leading-relaxed text-neutral-200 whitespace-pre-wrap break-all select-all"></pre>
+      </div>
+    </div>
+
   </aside>
+
+  <!-- Separate Floating Notifications Window -->
+  <div id="notif-win" role="dialog" aria-label="Compiler Notifications">
+    <div id="notif-hdr">
+      <span class="text-[11px] font-mono uppercase tracking-widest text-neutral-400">Notifications</span>
+      <div class="flex items-center gap-1.5">
+        <button id="notif-clear" type="button" class="px-2 py-0.5 text-[11px] rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 cursor-pointer">Clear</button>
+        <button id="notif-close" type="button" title="Close" class="px-1.5 py-0.5 text-xs text-neutral-400 hover:text-neutral-100 cursor-pointer">&times;</button>
+      </div>
+    </div>
+    <div id="notif-list"><div class="notif-empty">No notifications.</div></div>
+  </div>
 
   <div id="bm-modal">
     <div id="bm-box">
@@ -369,13 +479,17 @@
       dt_blocks:      { colourPrimary: '#0f766e', colourSecondary: '#115e59', colourTertiary: '#134e4a' },
       starter_blocks: { colourPrimary: '#d95716', colourSecondary: '#b8430b', colourTertiary: '#9a3412' },
       memory_blocks:  { colourPrimary: '#2563eb', colourSecondary: '#1d4ed8', colourTertiary: '#1e40af' },
-      gadget_blocks:  { colourPrimary: '#7c3aed', colourSecondary: '#6d28d9', colourTertiary: '#5b21b6' }
+      gadget_blocks:  { colourPrimary: '#7c3aed', colourSecondary: '#6d28d9', colourTertiary: '#5b21b6' },
+      eval_blocks:    { colourPrimary: '#be123c', colourSecondary: '#9f1239', colourTertiary: '#881337' },
+      misc_blocks:    { colourPrimary: '#475569', colourSecondary: '#334155', colourTertiary: '#1e293b' }
     },
     categoryStyles: {
       dt_category:      { colour: '#0f766e' },
       starter_category: { colour: '#d95716' },
       memory_category:  { colour: '#2563eb' },
-      gadget_category:  { colour: '#7c3aed' }
+      gadget_category:  { colour: '#7c3aed' },
+      eval_category:    { colour: '#be123c' },
+      misc_category:    { colour: '#475569' }
     },
     componentStyles: {
       workspaceBackgroundColour: '#f8fafc',
@@ -402,6 +516,7 @@
   );
   const ADD_ICON = svg('M8 4v8M4 8h8');
   const SUB_ICON = svg('M4 8h8');
+  const SWAP_ICON = svg('M4 5.5h8M9.5 3.2L12 5.5l-2.5 2.3M12 10.5H4M6.5 8.2L4 10.5l2.5 2.3');
 
   class FieldBtn extends Blockly.Field {
     constructor(text, fn) {
@@ -417,8 +532,123 @@
     }
   }
 
+  const escHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const isLabelBlock = b => !!b && (b.type === 'rsc_label' || (b.type === 'rsc_loop_back' && !!b.hasLabel_));
+
+  function getLabelBlocks() {
+    if (!ws) return [];
+    return ws.getAllBlocks(false).filter(b => !b.isShadow() && isLabelBlock(b));
+  }
+
+  function isLabelNameTaken(name, excludeBlock) {
+    const target = (name || '').trim();
+    if (!target) return false;
+    return getLabelBlocks().some(b => b !== excludeBlock && (b.getFieldValue('NAME') || '').trim() === target);
+  }
+
+  function makeUniqueLabelName(base, excludeBlock) {
+    const clean = (base || 'label').trim() || 'label';
+    if (!isLabelNameTaken(clean, excludeBlock)) return clean;
+    const stem = clean.replace(/\d+$/, '') || clean;
+    let n = 2;
+    while (isLabelNameTaken(stem + n, excludeBlock)) n++;
+    return stem + n;
+  }
+
+  function findLabelBlock(name) {
+    const target = (name || '').trim();
+    if (!target) return null;
+    return getLabelBlocks().find(b => (b.getFieldValue('NAME') || '').trim() === target) || null;
+  }
+
+  function findSectionForLabel(name) {
+    const blk = findLabelBlock(name);
+    if (!blk) return null;
+    const root = blk.getRootBlock();
+    return (root && root.type === 'rsc_section') ? root : null;
+  }
+
+  function isAddrOfBackupLocked(blk) {
+    if (!blk || blk.isInFlyout) return false;
+    const name = (blk.getFieldValue('NAME') || '').trim();
+    if (!name) return false;
+    const lbl = findLabelBlock(name);
+    if (!lbl) return false;
+    const sec = findSectionForLabel(name);
+    return !(sec && sec.hasBackup_);
+  }
+
+  function parseHexAddr(v) {
+    const clean = (v || '').trim().replace(/^0x/i, '');
+    return /^[0-9a-f]+$/i.test(clean) ? parseInt(clean, 16) : NaN;
+  }
+
+  function calcBackupDelta(sec) {
+    if (!sec || !sec.hasBackup_) return null;
+    const norm = parseHexAddr(sec.getFieldValue('ADDR'));
+    const bak = parseHexAddr(sec.getFieldValue('BACKUP'));
+    if (Number.isNaN(norm) || Number.isNaN(bak)) return null;
+    return bak - norm;
+  }
+
+  function syncAddrOfBlocks() {
+    if (!ws) return;
+    for (const blk of ws.getAllBlocks(false)) {
+      if (blk.type !== 'rsc_addr_of' || blk.isShadow()) continue;
+      const locked = isAddrOfBackupLocked(blk);
+      if (locked && blk.getFieldValue('MODE') === 'backup') {
+        Blockly.Events.disable();
+        try {
+          blk.setFieldValue('normal', 'MODE');
+        } finally {
+          Blockly.Events.enable();
+        }
+      }
+      const modeField = blk.getField('MODE');
+      if (modeField && typeof modeField.getOptions === 'function') {
+        modeField.getOptions(false);
+      }
+    }
+  }
+
+  class FieldUniqueLabel extends Blockly.FieldTextInput {
+    showEditor_(e) {
+      this.prevValidName_ = this.getValue();
+      super.showEditor_(e);
+    }
+    widgetDispose_() {
+      super.widgetDispose_();
+      const blk = this.getSourceBlock();
+      if (!blk || blk.isInFlyout || !ws || blk.workspace !== ws) return;
+      const raw = (this.getValue() || '').trim();
+      const defName = blk.type === 'rsc_loop_back' ? 'restore' : 'start';
+      if (!raw) {
+        const prev = (this.prevValidName_ || '').trim();
+        const fallback = (prev && !isLabelNameTaken(prev, blk)) ? prev : makeUniqueLabelName(defName, blk);
+        this.setValue(fallback);
+      } else if (isLabelNameTaken(raw, blk)) {
+        const prev = (this.prevValidName_ || '').trim();
+        const fallback = (prev && !isLabelNameTaken(prev, blk)) ? prev : makeUniqueLabelName(raw, blk);
+        this.setValue(fallback);
+        openUiModal(
+          'Duplicate label name',
+          `<p>A label named "<strong>${escHtml(raw)}</strong>" already exists. Label names must be unique.</p>`,
+          'OK',
+          closeUiModal
+        );
+      } else if (raw !== this.getValue()) {
+        this.setValue(raw);
+      }
+      syncAddrOfBlocks();
+      validateLoopBackBlocks(false);
+      updateOutput();
+    }
+  }
+
   let dtStmt = false;
+  let evalStmt = false;
   let ws = null;
+  let isLoadingSave = false;
 
   const uiModal = document.getElementById('ui-modal');
   const uiModalTitle = document.getElementById('ui-modal-title');
@@ -452,20 +682,69 @@
   function setDtShape(b, asStmt) {
     b.isStmt_ = !!asStmt && !b.isShadow();
     if (b.isStmt_) {
+      if (b.outputConnection && b.outputConnection.isConnected()) b.outputConnection.disconnect();
       b.setOutput(false);
       b.setPreviousStatement(true, 'STMT');
       b.setNextStatement(true, 'STMT');
     } else {
+      if (b.previousConnection && b.previousConnection.isConnected()) b.previousConnection.disconnect();
+      if (b.nextConnection && b.nextConnection.isConnected()) b.nextConnection.disconnect();
       b.setPreviousStatement(false);
       b.setNextStatement(false);
       b.setOutput(true);
     }
   }
 
+  function toggleDtShape(b) {
+    if (!b || b.isInFlyout || b.isShadow()) return;
+    const nextStmt = !b.isStmt_;
+    let wasConnected = false;
+    Blockly.Events.setGroup(true);
+    try {
+      if (nextStmt) {
+        if (b.outputConnection && b.outputConnection.isConnected()) {
+          wasConnected = true;
+          b.outputConnection.disconnect();
+        }
+      } else {
+        if ((b.previousConnection && b.previousConnection.isConnected()) ||
+            (b.nextConnection && b.nextConnection.isConnected())) {
+          wasConnected = true;
+          b.unplug(true);
+        }
+      }
+      setDtShape(b, nextStmt);
+      if (wasConnected) b.moveBy(18, 22);
+      if (b.rendered) b.render();
+      pulseBlock(b.id, 'rsc-anim-snap', 280);
+    } finally {
+      Blockly.Events.setGroup(false);
+    }
+    if (ws && b.workspace === ws) updateOutput();
+  }
+
+  function makeSwapBtn(b) {
+    return new Blockly.FieldImage(SWAP_ICON, 16, 16, 'switch block type', () => toggleDtShape(b));
+  }
+
+  function dtContextMenu() {
+    return {
+      customContextMenu(options) {
+        if (this.isInFlyout || this.isShadow()) return;
+        options.unshift({
+          text: this.isStmt_ ? 'Switch to value block' : 'Switch to statement block',
+          enabled: true,
+          callback: () => toggleDtShape(this)
+        });
+      }
+    };
+  }
+
   function dtExtra() {
     return {
       saveExtraState() { return { stmt: this.isStmt_ }; },
-      loadExtraState(s) { setDtShape(this, s && s.stmt); }
+      loadExtraState(s) { setDtShape(this, s && s.stmt); },
+      ...dtContextMenu()
     };
   }
 
@@ -603,10 +882,18 @@
     }
   };
 
+  Blockly.Blocks['rsc_eval_val'] = {
+    init() {
+      this.appendDummyInput().appendField(new Blockly.FieldTextInput('0'), 'V');
+      this.setOutput(true);
+      this.setStyle('eval_blocks');
+    }
+  };
+
   // --- 1. Datatypes ---
   Blockly.Blocks['rsc_string'] = {
     init() {
-      this.appendDummyInput().appendField('string').appendField(new Blockly.FieldTextInput(''), 'V');
+      this.appendDummyInput().appendField('string').appendField(new Blockly.FieldTextInput(''), 'V').appendField(makeSwapBtn(this), 'SWAP');
       this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
@@ -615,7 +902,7 @@
 
   Blockly.Blocks['rsc_integer'] = {
     init() {
-      this.appendDummyInput().appendField('integer').appendField(new Blockly.FieldNumber(0, -Infinity, Infinity, 1), 'V');
+      this.appendDummyInput().appendField('integer').appendField(new Blockly.FieldNumber(0, -Infinity, Infinity, 1), 'V').appendField(makeSwapBtn(this), 'SWAP');
       this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
@@ -633,7 +920,8 @@
         }))
         .appendField(new Blockly.FieldImage(SUB_ICON, 16, 16, '', () => {
           if (!this.isInFlyout && this.itemCount_ > 1) this.setItems_(this.itemCount_ - 1);
-        }));
+        }))
+        .appendField(makeSwapBtn(this), 'SWAP');
       this.setItems_(1);
       this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
@@ -655,12 +943,13 @@
     loadExtraState(s) {
       setDtShape(this, s && s.stmt);
       this.setItems_(s && typeof s.n === 'number' ? s.n : 1);
-    }
+    },
+    ...dtContextMenu()
   };
 
   Blockly.Blocks['rsc_0x'] = {
     init() {
-      this.appendDummyInput().appendField('0x').appendField(new Blockly.FieldTextInput('00'), 'V');
+      this.appendDummyInput().appendField('0x').appendField(new Blockly.FieldTextInput('00'), 'V').appendField(makeSwapBtn(this), 'SWAP');
       this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
@@ -679,7 +968,7 @@
 
   Blockly.Blocks['rsc_token'] = {
     init() {
-      this.appendDummyInput().appendField('token').appendField(new Blockly.FieldTextInput(''), 'V');
+      this.appendDummyInput().appendField('token').appendField(new Blockly.FieldTextInput(''), 'V').appendField(makeSwapBtn(this), 'SWAP');
       this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
@@ -693,7 +982,8 @@
       this.bmBits_ = new Array(64).fill(0);
       this.appendDummyInput()
         .appendField('bitmap')
-        .appendField(new FieldBtn('click to open', b => openBmEditor(b)), 'BTN');
+        .appendField(new FieldBtn('click to open', b => openBmEditor(b)), 'BTN')
+        .appendField(makeSwapBtn(this), 'SWAP');
       this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
     },
@@ -707,7 +997,8 @@
         this.bmH_ = s.h;
         this.bmBits_ = (s.b || '').padEnd(s.w * s.h, '0').split('').map(c => c === '1' ? 1 : 0);
       }
-    }
+    },
+    ...dtContextMenu()
   };
 
   Blockly.Blocks['rsc_table'] = {
@@ -721,7 +1012,8 @@
         }))
         .appendField(new Blockly.FieldImage(SUB_ICON, 16, 16, '', () => {
           if (!this.isInFlyout && this.itemCount_ > 0) this.setItems_(this.itemCount_ - 1);
-        }));
+        }))
+        .appendField(makeSwapBtn(this), 'SWAP');
       this.setItems_(2);
       this.setStyle('dt_blocks');
       setDtShape(this, dtStmt);
@@ -741,7 +1033,8 @@
     loadExtraState(s) {
       setDtShape(this, s && s.stmt);
       this.setItems_(s && typeof s.n === 'number' ? s.n : 2);
-    }
+    },
+    ...dtContextMenu()
   };
 
   // --- 2. Starter Blocks ---
@@ -779,6 +1072,7 @@
         this.getField('TOGGLE').setValue(ADD_ICON);
       }
       if (!this.isInFlyout && ws && this.workspace === ws) {
+        syncAddrOfBlocks();
         validateLoopBackBlocks();
         updateOutput();
       }
@@ -812,7 +1106,7 @@
   // --- 3. Memory ---
   Blockly.Blocks['rsc_label'] = {
     init() {
-      this.appendDummyInput().appendField('label').appendField(new Blockly.FieldTextInput('start'), 'NAME');
+      this.appendDummyInput().appendField('label').appendField(new FieldUniqueLabel('start'), 'NAME');
       this.appendStatementInput('BODY');
       this.setPreviousStatement(true, ['LABEL', 'STMT']);
       this.setNextStatement(true, ['LABEL', 'STMT']);
@@ -822,7 +1116,26 @@
 
   Blockly.Blocks['rsc_addr_of'] = {
     init() {
-      this.appendDummyInput().appendField('address of').appendField(new Blockly.FieldTextInput(''), 'NAME');
+      this.appendDummyInput()
+        .appendField('address of')
+        .appendField(new Blockly.FieldTextInput(''), 'NAME');
+      const modeDropdown = new Blockly.FieldDropdown(function() {
+        const blk = this.getSourceBlock();
+        if (blk && !blk.isInFlyout && isAddrOfBackupLocked(blk)) {
+          return [['normal', 'normal'], ['backup (locked)', '__locked__']];
+        }
+        return [['normal', 'normal'], ['backup', 'backup']];
+      }, function(newVal) {
+        const blk = this.getSourceBlock();
+        if (newVal === '__locked__') return null;
+        if (newVal === 'backup' && blk && !blk.isInFlyout && isAddrOfBackupLocked(blk)) {
+          return 'normal';
+        }
+        return newVal;
+      });
+      this.appendDummyInput()
+        .appendField('in')
+        .appendField(modeDropdown, 'MODE');
       this.setOutput(true);
       this.setStyle('memory_blocks');
     }
@@ -841,25 +1154,80 @@
 
   Blockly.Blocks['rsc_loop_back'] = {
     init() {
-      this.setInputsInline(true);
-      this.appendValueInput('ADDR').appendField('loop back to');
-      if (this.appendEndRowInput) this.appendEndRowInput();
-      this.appendDummyInput()
-        .appendField('label')
-        .appendField(new Blockly.FieldTextInput('restore'), 'NAME');
-      this.setPreviousStatement(true, ['LABEL', 'STMT']);
-      this.setNextStatement(true, ['LABEL', 'STMT']);
+      this.hasLabel_ = false;
+      this.labelVal_ = 'restore';
+      this.appendDummyInput('MAIN')
+        .appendField('loop back to label')
+        .appendField(new Blockly.FieldTextInput('start'), 'TARGET')
+        .appendField(new Blockly.FieldImage(ADD_ICON, 16, 16, 'toggle separate label', () => {
+          if (!this.isInFlyout) this.setHasLabel_(!this.hasLabel_);
+        }), 'TOGGLE');
       this.setStyle('memory_blocks');
-    }
+      this.setHasLabel_(true);
+    },
+    setHasLabel_(on) {
+      on = !!on;
+      if (on === this.hasLabel_) return;
+      this.hasLabel_ = on;
+      if (on) {
+        let name = (this.labelVal_ || 'restore').trim() || 'restore';
+        if (!isLoadingSave && !this.isInFlyout && ws && this.workspace === ws && isLabelNameTaken(name, this)) {
+          name = makeUniqueLabelName(name, this);
+        }
+        this.labelVal_ = name;
+        this.appendDummyInput('LBL')
+          .appendField('label name')
+          .appendField(new FieldUniqueLabel(name), 'NAME');
+        this.getField('TOGGLE').setValue(SUB_ICON);
+        this.setPreviousStatement(true, ['LABEL', 'STMT']);
+        this.setNextStatement(true, ['LABEL', 'STMT']);
+      } else {
+        this.labelVal_ = (this.getFieldValue('NAME') || this.labelVal_ || 'restore').trim() || 'restore';
+        if (this.getInput('LBL')) this.removeInput('LBL');
+        this.getField('TOGGLE').setValue(ADD_ICON);
+        const inSectionTower = !isLoadingSave && !this.isInFlyout && ws && this.workspace === ws &&
+          !this.getSurroundParent() && this.getRootBlock() && this.getRootBlock().type === 'rsc_section';
+        if (inSectionTower) {
+          this.unplug(true);
+          this.moveBy(24, 24);
+          if (!sectionWarningShown) {
+            sectionWarningShown = true;
+            openUiModal(
+              'Invalid section placement',
+              '<p>A loop back block without a separate label can only be placed inside a label.</p>',
+              'OK',
+              () => { closeUiModal(); sectionWarningShown = false; }
+            );
+          }
+        }
+        this.setPreviousStatement(true, 'STMT');
+        this.setNextStatement(true, 'STMT');
+      }
+      if (!isLoadingSave && !this.isInFlyout && ws && this.workspace === ws) {
+        syncAddrOfBlocks();
+        validateLoopBackBlocks(false);
+        updateOutput();
+      }
+    },
+    saveExtraState() { return { hasLabel: this.hasLabel_ }; },
+    loadExtraState(s) { this.setHasLabel_(!s || s.hasLabel !== false); }
   };
 
   // --- 4. Gadgets ---
-  Blockly.Blocks['rsc_printline'] = {
+  Blockly.Blocks['rsc_smallprint'] = {
     init() {
       this.setInputsInline(true);
-      this.appendValueInput('X').appendField('print line at');
-      this.appendValueInput('Y');
-      this.appendValueInput('ADDR').appendField(', address');
+      (this.appendEndRowInput ? this.appendEndRowInput() : this.appendDummyInput())
+        .appendField('print')
+        .appendField(new Blockly.FieldDropdown([
+          ['regular', '0x0e'],
+          ['small', '0x0a'],
+          ['tiny', '0x08']
+        ]), 'FONT')
+        .appendField('font');
+      this.appendValueInput('POS').appendField('at');
+      if (this.appendEndRowInput) this.appendEndRowInput();
+      this.appendValueInput('ADDR').appendField('content at address');
       this.setPreviousStatement(true, 'STMT');
       this.setNextStatement(true, 'STMT');
       this.setStyle('gadget_blocks');
@@ -950,12 +1318,64 @@
     }
   };
 
+  // --- 5. Evaluation ---
+  Blockly.Blocks['rsc_eval_op'] = {
+    init() {
+      this.setInputsInline(true);
+      this.appendValueInput('A');
+      this.appendValueInput('B')
+        .appendField(new Blockly.FieldDropdown([
+          ['+', '+'],
+          ['-', '-'],
+          ['*', '*'],
+          ['/', '/'],
+          ['^', '^'],
+          ['%', '%']
+        ]), 'OP');
+      this.appendDummyInput('SWAP_ROW').appendField(makeSwapBtn(this), 'SWAP');
+      this.setStyle('eval_blocks');
+      setDtShape(this, evalStmt);
+    },
+    ...dtExtra()
+  };
+
+  // --- 6. Misc ---
+  Blockly.Blocks['rsc_custom_code'] = {
+    init() {
+      this.lineCount_ = 0;
+      this.setInputsInline(false);
+      this.appendDummyInput('HDR')
+        .appendField('custom code')
+        .appendField(new Blockly.FieldImage(ADD_ICON, 16, 16, '', () => {
+          if (!this.isInFlyout) this.setLines_(this.lineCount_ + 1);
+        }))
+        .appendField(new Blockly.FieldImage(SUB_ICON, 16, 16, '', () => {
+          if (!this.isInFlyout && this.lineCount_ > 1) this.setLines_(this.lineCount_ - 1);
+        }));
+      this.setLines_(1);
+      this.setPreviousStatement(true, 'STMT');
+      this.setNextStatement(true, 'STMT');
+      this.setStyle('misc_blocks');
+    },
+    setLines_(n) {
+      n = Math.max(1, n);
+      while (this.lineCount_ < n) {
+        const idx = this.lineCount_++;
+        this.appendDummyInput('L' + idx).appendField(new Blockly.FieldTextInput(''), 'C' + idx);
+      }
+      while (this.lineCount_ > n) {
+        this.removeInput('L' + --this.lineCount_);
+      }
+      if (!this.isInFlyout && ws && this.workspace === ws) updateOutput();
+    },
+    saveExtraState() { return { n: this.lineCount_ }; },
+    loadExtraState(s) { this.setLines_(s && typeof s.n === 'number' ? s.n : 1); }
+  };
+
   // --- RSC Generator ---
   const RSC = new Blockly.Generator('RSC');
   RSC.INDENT = '  ';
   const emitDt = (b, code) => b.outputConnection ? [code, 0] : code + '\n';
-
-  const isLabelBlock = b => !!b && (b.type === 'rsc_label' || b.type === 'rsc_loop_back');
 
   RSC.scrub_ = function(block, code, thisOnly) {
     if (thisOnly) return code;
@@ -984,6 +1404,7 @@
     return [bytes ? 'hex ' + bytes : 'hex', 0];
   };
   RSC.forBlock['rsc_hex_addr'] = b => [b.getFieldValue('V').trim(), 0];
+  RSC.forBlock['rsc_eval_val'] = b => [(b.getFieldValue('V') || '0').trim() || '0', 0];
 
   RSC.forBlock['rsc_string']  = b => emitDt(b, `"${b.getFieldValue('V')}"`);
   RSC.forBlock['rsc_integer'] = b => emitDt(b, String(b.getFieldValue('V')));
@@ -1037,34 +1458,56 @@
 
   RSC.forBlock['rsc_label'] = (b, g) =>
     `lbl ${b.getFieldValue('NAME')}\n${g.statementToCode(b, 'BODY')}`;
-  RSC.forBlock['rsc_addr_of'] = b => [`adr(${b.getFieldValue('NAME')})`, 0];
+  RSC.forBlock['rsc_addr_of'] = b => {
+    const name = (b.getFieldValue('NAME') || '').trim();
+    const mode = b.getFieldValue('MODE') || 'normal';
+    if (mode === 'backup' && !isAddrOfBackupLocked(b)) {
+      const lblSec = findSectionForLabel(name);
+      const ownRoot = b.getRootBlock();
+      const sec = lblSec || (ownRoot && ownRoot.type === 'rsc_section' && ownRoot.hasBackup_ ? ownRoot : null);
+      const diff = calcBackupDelta(sec);
+      if (diff !== null) {
+        const op = diff < 0 ? '-' : '+';
+        const mag = '0x' + Math.abs(diff).toString(16);
+        return [`eval(adr(${name}) ${op} ${mag})`, 0];
+      }
+      return [`eval(adr(${name}) + 0x0)`, 0];
+    }
+    return [`adr(${name})`, 0];
+  };
   RSC.forBlock['rsc_set_addr'] = (b, g) => {
     const addr = stripHex(g.valueToCode(b, 'ADDR', 0) || '0x0000');
     const val = g.valueToCode(b, 'VAL', 0) || '0x00';
     return `xr0 = ${addr}, ${val}, 0x00\n[er0]=r2\n`;
   };
-  RSC.forBlock['rsc_loop_back'] = (b, g) => {
-    const root = b.getRootBlock();
-    const secName = (root && root.type === 'rsc_section' ? (root.getFieldValue('NAME') || 'main').trim() : 'main') || 'main';
-    const name = (b.getFieldValue('NAME') || 'restore').trim() || 'restore';
-    const addr = (g.valueToCode(b, 'ADDR', 0) || '0x0000').trim();
-    const ind = RSC.INDENT;
-    return (
-      `lbl ${name}\n` +
-      `${ind}pop xr4, pop xr12\n` +
-      `${ind}${addr}\n` +
-      `${ind}hex fe03\n` +
-      `${ind}eval(${addr}+dist.${secName})\n` +
-      `${ind}eval(${addr}-12)\n` +
-      `${ind}memcpy_auto_jump\n`
-    );
+  RSC.forBlock['rsc_loop_back'] = b => {
+    const target = (b.getFieldValue('TARGET') || 'start').trim() || 'start';
+    const targetSec = findSectionForLabel(target);
+    const ownRoot = b.getRootBlock();
+    const sec = targetSec || (ownRoot && ownRoot.type === 'rsc_section' ? ownRoot : null);
+    const secName = (sec ? (sec.getFieldValue('NAME') || 'main').trim() : 'main') || 'main';
+    const addr = `adr(${target})`;
+    const body = [
+      'pop xr4, pop xr12',
+      addr,
+      'hex fe03',
+      `eval(${addr}+dist.${secName})`,
+      `eval(${addr}-0xc)`,
+      'memcpy_auto_jump'
+    ];
+    if (b.hasLabel_) {
+      const name = (b.getFieldValue('NAME') || 'restore').trim() || 'restore';
+      const ind = RSC.INDENT;
+      return `lbl ${name}\n` + body.map(line => ind + line).join('\n') + '\n';
+    }
+    return body.join('\n') + '\n';
   };
 
-  RSC.forBlock['rsc_printline'] = (b, g) => {
-    const x = (g.valueToCode(b, 'X', 0) || 'hex 00').trim();
-    const y = (g.valueToCode(b, 'Y', 0) || 'hex 00').trim();
+  RSC.forBlock['rsc_smallprint'] = (b, g) => {
+    const pos = (g.valueToCode(b, 'POS', 0) || '0x00').trim();
+    const font = b.getFieldValue('FONT') || '0x0e';
     const addr = (g.valueToCode(b, 'ADDR', 0) || '0x0000').trim();
-    return `xr0 = ${x}, ${y}, ${addr}\nprintline\n`;
+    return `xr0 = ${font}, ${pos}, ${addr}\nsmallprint\n`;
   };
   RSC.forBlock['rsc_render'] = () => 'render.ddd4\n';
   RSC.forBlock['rsc_waitshift'] = () => 'waitshift\n';
@@ -1093,6 +1536,24 @@
     const x2 = (g.valueToCode(b, 'X2', 0) || '0x00').trim();
     const y2 = (g.valueToCode(b, 'Y2', 0) || '0x00').trim();
     return `xr0 = ${x1}, ${y1}, ${x2}, ${y2}\nline_draw\n`;
+  };
+  const unwrapEvalExpr = expr => {
+    const m = expr.match(/^eval\((.*)\)$/i);
+    return m ? `(${m[1]})` : expr;
+  };
+  RSC.forBlock['rsc_eval_op'] = (b, g) => {
+    const a = unwrapEvalExpr((g.valueToCode(b, 'A', 0) || '0').trim() || '0');
+    const op = b.getFieldValue('OP') || '+';
+    const c = unwrapEvalExpr((g.valueToCode(b, 'B', 0) || '0').trim() || '0');
+    return emitDt(b, `eval(${a}${op}${c})`);
+  };
+  RSC.forBlock['rsc_custom_code'] = b => {
+    const lines = [];
+    for (let i = 0; i < b.lineCount_; i++) {
+      const line = (b.getFieldValue('C' + i) || '').trimEnd();
+      if (line.trim() !== '') lines.push(line);
+    }
+    return lines.length ? lines.join('\n') + '\n' : '';
   };
 
   // --- Workspace ---
@@ -1138,22 +1599,16 @@
                 VAL: { shadow: { type: 'rsc_0x_shadow', fields: { V: '00' } } }
               }
             },
-            {
-              kind: 'block', type: 'rsc_loop_back',
-              inputs: {
-                ADDR: { shadow: { type: 'rsc_0x_shadow', fields: { V: '0000' } } }
-              }
-            }
+            { kind: 'block', type: 'rsc_loop_back' }
           ]
         },
         {
           kind: 'category', name: 'Gadgets', categorystyle: 'gadget_category',
           contents: [
             {
-              kind: 'block', type: 'rsc_printline',
+              kind: 'block', type: 'rsc_smallprint',
               inputs: {
-                X: { shadow: { type: 'rsc_hex_byte', fields: { V: '00' } } },
-                Y: { shadow: { type: 'rsc_hex_byte', fields: { V: '00' } } },
+                POS: { shadow: { type: 'rsc_0x_shadow', fields: { V: '00' } } },
                 ADDR: { shadow: { type: 'rsc_0x_shadow', fields: { V: '0000' } } }
               }
             },
@@ -1193,6 +1648,60 @@
               }
             }
           ]
+        },
+        {
+          kind: 'category', name: 'Evaluation', categorystyle: 'eval_category',
+          contents: [
+            { kind: 'button', text: 'switch block type', callbackKey: 'SWITCH_EVAL' },
+            {
+              kind: 'block', type: 'rsc_eval_op', fields: { OP: '+' },
+              inputs: {
+                A: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } },
+                B: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } }
+              }
+            },
+            {
+              kind: 'block', type: 'rsc_eval_op', fields: { OP: '-' },
+              inputs: {
+                A: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } },
+                B: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } }
+              }
+            },
+            {
+              kind: 'block', type: 'rsc_eval_op', fields: { OP: '*' },
+              inputs: {
+                A: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } },
+                B: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } }
+              }
+            },
+            {
+              kind: 'block', type: 'rsc_eval_op', fields: { OP: '/' },
+              inputs: {
+                A: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } },
+                B: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } }
+              }
+            },
+            {
+              kind: 'block', type: 'rsc_eval_op', fields: { OP: '^' },
+              inputs: {
+                A: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } },
+                B: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } }
+              }
+            },
+            {
+              kind: 'block', type: 'rsc_eval_op', fields: { OP: '%' },
+              inputs: {
+                A: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } },
+                B: { shadow: { type: 'rsc_eval_val', fields: { V: '0' } } }
+              }
+            }
+          ]
+        },
+        {
+          kind: 'category', name: 'Misc', categorystyle: 'misc_category',
+          contents: [
+            { kind: 'block', type: 'rsc_custom_code' }
+          ]
         }
       ]
     }
@@ -1200,6 +1709,10 @@
 
   ws.registerButtonCallback('SWITCH_DT', () => {
     dtStmt = !dtStmt;
+    ws.getToolbox().refreshSelection();
+  });
+  ws.registerButtonCallback('SWITCH_EVAL', () => {
+    evalStmt = !evalStmt;
     ws.getToolbox().refreshSelection();
   });
 
@@ -1215,6 +1728,8 @@
   const out = document.getElementById('rsc-output');
   let sectionWarningShown = false;
   let backupWarningShown = false;
+  let customCodeWarningShown = false;
+  let pendingCustomCodeWarning = false;
 
   function pulseBlock(blockId, cls, ms) {
     const blk = blockId && ws.getBlockById(blockId);
@@ -1228,24 +1743,31 @@
   }
 
   function validateLoopBackBlocks(showModalOnMissing) {
-    let missingFound = false;
+    let missingSecName = null;
     for (const blk of ws.getAllBlocks(false)) {
       if (blk.type !== 'rsc_loop_back') continue;
       const root = blk.getRootBlock();
-      if (root && root.type === 'rsc_section' && root.hasBackup_) {
+      if (!root || root.type !== 'rsc_section') {
         blk.setWarningText(null);
-      } else if (root && root.type === 'rsc_section') {
-        blk.setWarningText('Requires this section block to have a backup address.');
-        missingFound = true;
+        continue;
+      }
+      const target = (blk.getFieldValue('TARGET') || '').trim();
+      const targetSec = findSectionForLabel(target);
+      if (!target || !targetSec) {
+        blk.setWarningText(target ? `Label "${target}" was not found in any section.` : 'Enter a target label name.');
+      } else if (!targetSec.hasBackup_) {
+        const secName = (targetSec.getFieldValue('NAME') || 'main').trim() || 'main';
+        blk.setWarningText(`Section "${secName}" (containing label "${target}") requires a backup address.`);
+        missingSecName = secName;
       } else {
         blk.setWarningText(null);
       }
     }
-    if (showModalOnMissing && missingFound && !backupWarningShown) {
+    if (showModalOnMissing && missingSecName && !backupWarningShown) {
       backupWarningShown = true;
       openUiModal(
         'Backup address required',
-        '<p>The "loop back" block uses dist.&lt;section&gt;, which requires its section block to have a backup address. Click + on the section block to enable backup.</p>',
+        `<p>The "loop back" block uses <code>dist.${escHtml(missingSecName)}</code>, which requires section "<strong>${escHtml(missingSecName)}</strong>" to have a backup address. Click + on that section block to enable backup.</p>`,
         'OK',
         () => { closeUiModal(); backupWarningShown = false; }
       );
@@ -1253,8 +1775,31 @@
   }
 
   ws.addChangeListener(e => {
-    if (e.type === Blockly.Events.BLOCK_CREATE && e.blockId) {
-      pulseBlock(e.blockId, 'rsc-anim-enter', 220);
+    if (isLoadingSave) return;
+    if (e.type === Blockly.Events.BLOCK_CREATE) {
+      const ids = e.ids || (e.blockId ? [e.blockId] : []);
+      for (const id of ids) {
+        const created = ws.getBlockById(id);
+        if (!created || created.isShadow()) continue;
+        if (isLabelBlock(created)) {
+          const cur = (created.getFieldValue('NAME') || '').trim();
+          const defName = created.type === 'rsc_loop_back' ? 'restore' : 'start';
+          if (!cur || isLabelNameTaken(cur, created)) {
+            Blockly.Events.disable();
+            try {
+              created.setFieldValue(makeUniqueLabelName(cur || defName, created), 'NAME');
+            } finally {
+              Blockly.Events.enable();
+            }
+          }
+        } else if (created.type === 'rsc_custom_code') {
+          created.setWarningText('Warning: Custom code is not validated and may cause compilation errors.');
+          if (!customCodeWarningShown) pendingCustomCodeWarning = true;
+        }
+      }
+      if (e.blockId) pulseBlock(e.blockId, 'rsc-anim-enter', 220);
+      syncAddrOfBlocks();
+      validateLoopBackBlocks(false);
     }
     if (e.type === Blockly.Events.BLOCK_MOVE && !ws.isDragging()) {
       if (e.newParentId && e.newParentId !== e.oldParentId) {
@@ -1282,13 +1827,30 @@
         }
       }
       const moved = e.blockId && ws.getBlockById(e.blockId);
+      syncAddrOfBlocks();
       validateLoopBackBlocks(!!(moved && moved.type === 'rsc_loop_back'));
+      if (pendingCustomCodeWarning && !customCodeWarningShown && uiModal.style.display !== 'flex') {
+        pendingCustomCodeWarning = false;
+        customCodeWarningShown = true;
+        openUiModal(
+          'Custom code warning',
+          '<p>Using the custom code block bypasses validation and may cause compilation errors.</p>',
+          'OK',
+          closeUiModal
+        );
+      }
     }
-    if (!e.isUiEvent) out.textContent = RSC.workspaceToCode(ws);
+    if (e.type === Blockly.Events.BLOCK_CHANGE || e.type === Blockly.Events.BLOCK_DELETE) {
+      syncAddrOfBlocks();
+      validateLoopBackBlocks(false);
+    }
+    if (!e.isUiEvent) { out.textContent = RSC.workspaceToCode(ws); scheduleAutosave(); }
   });
 
-  function updateOutput() { out.textContent = RSC.workspaceToCode(ws); }
+  function updateOutput() { out.textContent = RSC.workspaceToCode(ws); scheduleAutosave(); }
   function initializeDefaultBlocks() {
+    customCodeWarningShown = false;
+    pendingCustomCodeWarning = false;
     ws.clear();
     const section = ws.newBlock('rsc_section');
     section.setFieldValue('main', 'NAME');
@@ -1313,8 +1875,301 @@
       btn.textContent = 'Copied'; setTimeout(() => btn.textContent = 'Copy', 1200);
     }
   });
+
+  // --- Savefiles (JSON Export / Import + localStorage Autosave) ---
+  const AUTOSAVE_KEY = 'rsc_blockly_autosave_v1';
+  const API_URL_KEY = 'rsc_blockly_api_url_v1';
+  const DEFAULT_COMPILE_ENDPOINT = 'https://casiovn.vercel.app/api/rac';
+  let autosaveTimer = null;
+
+  function buildSavePayload() {
+    return {
+      format: 'rsc-blockly',
+      version: 1,
+      savedAt: new Date().toISOString(),
+      workspace: Blockly.serialization.workspaces.save(ws)
+    };
+  }
+
+  function scheduleAutosave() {
+    if (isLoadingSave || !ws) return;
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(buildSavePayload()));
+      } catch {}
+    }, 250);
+  }
+
+  function loadWorkspaceFromPayload(payload) {
+    const state = payload && typeof payload === 'object' && payload.workspace && typeof payload.workspace === 'object'
+      ? payload.workspace
+      : payload;
+    if (!state || typeof state !== 'object' || !state.blocks) {
+      throw new Error('Invalid RSC savefile format.');
+    }
+    isLoadingSave = true;
+    Blockly.Events.disable();
+    try {
+      ws.clear();
+      Blockly.serialization.workspaces.load(state, ws);
+      for (const blk of ws.getAllBlocks(false)) {
+        if (blk.type === 'rsc_custom_code' && !blk.isShadow()) {
+          blk.setWarningText('Warning: Custom code is not validated and may cause compilation errors.');
+        }
+      }
+    } finally {
+      Blockly.Events.enable();
+      isLoadingSave = false;
+    }
+    syncAddrOfBlocks();
+    validateLoopBackBlocks(false);
+    out.textContent = RSC.workspaceToCode(ws);
+    scheduleAutosave();
+    Blockly.svgResize(ws);
+  }
+
+  function downloadSaveFile() {
+    const payload = buildSavePayload();
+    const topSec = ws.getTopBlocks(true).find(b => b.type === 'rsc_section');
+    const rawName = (topSec && topSec.getFieldValue('NAME') || 'project').trim();
+    const safeName = rawName.replace(/[^a-z0-9_-]+/gi, '_') || 'project';
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${safeName}.rscb.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const btn = document.getElementById('btn-save');
+    btn.textContent = 'Saved';
+    setTimeout(() => btn.textContent = 'Save', 1200);
+  }
+
+  const btnSave = document.getElementById('btn-save');
+  const btnLoad = document.getElementById('btn-load');
+  const fileLoad = document.getElementById('file-load');
+
+  btnSave.addEventListener('click', downloadSaveFile);
+  btnLoad.addEventListener('click', () => { fileLoad.value = ''; fileLoad.click(); });
+  fileLoad.addEventListener('change', async () => {
+    const file = fileLoad.files && fileLoad.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      loadWorkspaceFromPayload(JSON.parse(text));
+    } catch (err) {
+      openUiModal(
+        'Load failed',
+        `<p>Could not load savefile: ${escHtml(err && err.message ? err.message : String(err))}</p>`,
+        'OK',
+        closeUiModal
+      );
+    }
+  });
+  window.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      downloadSaveFile();
+    }
+  });
+
+  // --- Remote RAC Compiler & Separate Notifications Window ---
+  const btnCompile = document.getElementById('btn-compile');
+  const compilePane = document.getElementById('compile-pane');
+  const compileStatus = document.getElementById('compile-status');
+  const compileOutput = document.getElementById('compile-output');
+  const btnApiUrl = document.getElementById('btn-api-url');
+  const btnCopyCompiled = document.getElementById('btn-copy-compiled');
+  const btnCloseCompiled = document.getElementById('btn-close-compiled');
+  const btnNotifs = document.getElementById('btn-notifs');
+  const notifBadge = document.getElementById('notif-badge');
+  const notifWin = document.getElementById('notif-win');
+  const notifHdr = document.getElementById('notif-hdr');
+  const notifList = document.getElementById('notif-list');
+  const notifClear = document.getElementById('notif-clear');
+  const notifClose = document.getElementById('notif-close');
+
+  function getCompileEndpoint() {
+    try {
+      return (localStorage.getItem(API_URL_KEY) || '').trim() || DEFAULT_COMPILE_ENDPOINT;
+    } catch {
+      return DEFAULT_COMPILE_ENDPOINT;
+    }
+  }
+
+  btnApiUrl.addEventListener('click', () => {
+    const cur = getCompileEndpoint();
+    openUiModal(
+      'Compiler API URL',
+      `<label>Endpoint (or local CORS proxy)<input id="api-url-input" type="url" value="${escHtml(cur)}" placeholder="${DEFAULT_COMPILE_ENDPOINT}"></label>` +
+      `<p style="color:#a3a3a3;font-size:12px;margin:2px 0 0;">Leave blank to reset to default (${DEFAULT_COMPILE_ENDPOINT}).</p>`,
+      'Save',
+      body => {
+        const val = body.querySelector('#api-url-input').value.trim();
+        try {
+          if (val) localStorage.setItem(API_URL_KEY, val);
+          else localStorage.removeItem(API_URL_KEY);
+        } catch {}
+        closeUiModal();
+      }
+    );
+  });
+
+  function setCompileBadge(text, state) {
+    compileStatus.textContent = text;
+    compileStatus.className = 'text-[10px] font-mono px-1.5 py-0.5 rounded ' + (
+      state === 'ok' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/70' :
+      state === 'err' ? 'bg-rose-950 text-rose-300 border border-rose-800/70' :
+      'bg-neutral-800 text-neutral-300'
+    );
+  }
+
+  function renderNotifications(items) {
+    notifList.innerHTML = '';
+    const list = Array.isArray(items) ? items.map(x => String(x)) : [];
+    notifBadge.textContent = String(list.length);
+    notifBadge.className = 'text-[10px] font-mono px-1 rounded ' + (
+      list.length ? 'bg-amber-500/20 text-amber-300' : 'bg-neutral-800 text-neutral-400'
+    );
+    if (!list.length) {
+      const empty = document.createElement('div');
+      empty.className = 'notif-empty';
+      empty.textContent = 'No notifications.';
+      notifList.appendChild(empty);
+      return;
+    }
+    for (const msg of list) {
+      const el = document.createElement('div');
+      el.className = 'notif-item';
+      el.textContent = msg;
+      notifList.appendChild(el);
+    }
+  }
+
+  function openNotifWin() { notifWin.style.display = 'flex'; }
+  function closeNotifWin() { notifWin.style.display = 'none'; }
+
+  btnNotifs.addEventListener('click', () => {
+    if (notifWin.style.display === 'flex') closeNotifWin();
+    else openNotifWin();
+  });
+  notifClear.addEventListener('click', () => renderNotifications([]));
+  notifClose.addEventListener('click', closeNotifWin);
+  btnCloseCompiled.addEventListener('click', () => compilePane.classList.add('hidden'));
+  btnCopyCompiled.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(compileOutput.textContent || '');
+      btnCopyCompiled.textContent = 'Copied';
+      setTimeout(() => btnCopyCompiled.textContent = 'Copy', 1200);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = compileOutput.textContent || ''; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+      btnCopyCompiled.textContent = 'Copied';
+      setTimeout(() => btnCopyCompiled.textContent = 'Copy', 1200);
+    }
+  });
+
+  // Make notifications window draggable and isolated from Blockly events
+  notifWin.addEventListener('pointerdown', e => e.stopPropagation());
+  notifWin.addEventListener('keydown', e => e.stopPropagation());
+  let dragNotif = null;
+  notifHdr.addEventListener('pointerdown', e => {
+    if (e.target.closest('button')) return;
+    const r = notifWin.getBoundingClientRect();
+    notifWin.style.left = r.left + 'px';
+    notifWin.style.top = r.top + 'px';
+    notifWin.style.right = 'auto';
+    notifWin.style.bottom = 'auto';
+    dragNotif = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    notifHdr.setPointerCapture(e.pointerId);
+  });
+  notifHdr.addEventListener('pointermove', e => {
+    if (!dragNotif) return;
+    const x = Math.max(8, Math.min(window.innerWidth - notifWin.offsetWidth - 8, e.clientX - dragNotif.dx));
+    const y = Math.max(8, Math.min(window.innerHeight - notifWin.offsetHeight - 8, e.clientY - dragNotif.dy));
+    notifWin.style.left = x + 'px';
+    notifWin.style.top = y + 'px';
+  });
+  notifHdr.addEventListener('pointerup', () => { dragNotif = null; });
+  notifHdr.addEventListener('pointercancel', () => { dragNotif = null; });
+
+  async function postCompile(endpoint, bodyStr) {
+    try {
+      return await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: bodyStr
+      });
+    } catch (err) {
+      // Fallback to a CORS-safelisted simple request (skips OPTIONS preflight)
+      // in case the server sends Access-Control-Allow-Origin on POST but not OPTIONS.
+      return await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: bodyStr
+      });
+    }
+  }
+
+  btnCompile.addEventListener('click', async () => {
+    renderNotifications([]);
+    compilePane.classList.remove('hidden');
+    compileOutput.textContent = '';
+    setCompileBadge('Compiling...', 'idle');
+    btnCompile.disabled = true;
+    btnCompile.textContent = 'Compiling...';
+    const endpoint = getCompileEndpoint();
+    const bodyStr = JSON.stringify({ code: out.textContent || '', model: '580vnx' });
+    try {
+      const res = await postCompile(endpoint, bodyStr);
+      const data = await res.json().catch(() => null);
+      if (!data || typeof data !== 'object') {
+        throw new Error(`HTTP ${res.status}: Invalid JSON response`);
+      }
+      const ok = Boolean(data.success);
+      setCompileBadge(ok ? 'Success' : 'Error', ok ? 'ok' : 'err');
+      compileOutput.textContent = typeof data.output === 'string' ? data.output : '';
+      const notifs = Array.isArray(data.notifications) ? data.notifications : [];
+      renderNotifications(notifs);
+      if (notifs.length) openNotifWin();
+    } catch (err) {
+      setCompileBadge('Error', 'err');
+      compileOutput.textContent = '';
+      const msg = err && err.message ? err.message : String(err);
+      const isCors = err instanceof TypeError || /failed to fetch/i.test(msg);
+      const tips = [`Request failed: ${msg}`];
+      if (isCors) {
+        tips.push(
+          `CORS blocked by ${endpoint}` + (location.origin === 'null' ? ' (opened from file:// / origin "null")' : '') +
+          '. The API server does not send Access-Control-Allow-Origin headers for cross-origin browser requests. ' +
+          'Fix by enabling CORS on the server, hosting on the same origin, or pointing the "API" button to a local CORS proxy.'
+        );
+      }
+      renderNotifications(tips);
+      openNotifWin();
+    } finally {
+      btnCompile.disabled = false;
+      btnCompile.textContent = 'Compile';
+    }
+  });
+
   window.addEventListener('resize', () => Blockly.svgResize(ws));
-  window.addEventListener('load', () => { initializeDefaultBlocks(); Blockly.svgResize(ws); });
+  window.addEventListener('load', () => {
+    let restored = false;
+    try {
+      const raw = localStorage.getItem(AUTOSAVE_KEY);
+      if (raw) {
+        loadWorkspaceFromPayload(JSON.parse(raw));
+        restored = true;
+      }
+    } catch {}
+    if (!restored) initializeDefaultBlocks();
+    Blockly.svgResize(ws);
+  });
 
 })();
 
